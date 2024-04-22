@@ -21,6 +21,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "./auth_provider";
+import { redirect, useRouter } from "next/navigation";
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -30,6 +32,8 @@ const formSchema = z.object({
 });
 
 export default function LoginForm() {
+  const { login } = useAuth();
+  const router = useRouter();
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,9 +45,16 @@ export default function LoginForm() {
 
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+    try {
+      login(values.username, values.password);
+      router.push("/home");
+    } catch (error) {
+      console.error("Login failed:", error);
+      form.setError("root", {
+        type: "manual",
+        message: "Nepodarilo sa prihlasit",
+      });
+    }
   }
 
   //   <Card>
@@ -60,7 +71,11 @@ export default function LoginForm() {
     <Card>
       <CardHeader>
         <CardTitle>Prihlásenie</CardTitle>
-        {/* <CardDescription>Card Description</CardDescription> */}
+        <CardDescription className="text-destructive">
+          {form.formState.errors.root
+            ? form.formState.errors.root?.message
+            : ""}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -93,7 +108,9 @@ export default function LoginForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit">Prihlásiť</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Prihlasujem..." : "Prihlásiť"}
+            </Button>
           </form>
         </Form>
       </CardContent>
