@@ -24,5 +24,5 @@ function isValidToken(token: string): boolean {
 }
 
 export const config = {
-  matcher: ["/", "/home", "/login", "/register"],
+  matcher: ["/home", "/login", "/register"],
 };
