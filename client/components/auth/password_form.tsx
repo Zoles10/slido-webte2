@@ -29,44 +29,37 @@ import { Paragraph } from "../ui/typography/typography";
 import { Separator } from "../ui/separator";
 
 const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-  password: z.string(),
+  email: z.string().email("Zadajte platnú emailovú adresu"),
 });
 
-export default function LoginForm() {
-  const { login } = useAuth();
-  const router = useRouter();
-  // 1. Define your form.
+export default function PasswordForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
-      password: "",
+      email: "",
     },
   });
 
   // 2. Define a submit handler.
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //add delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    try {
-      login(values.username, values.password);
-      router.push("/home");
-    } catch (error) {
-      console.error("Login failed:", error);
-      form.setError("root", {
-        type: "manual",
-        message: "Nepodarilo sa prihlasit",
-      });
-    }
+    // await new Promise((resolve) => setTimeout(resolve, 1000));
+    // try {
+    //   login(values.username, values.password);
+    //   router.push("/home");
+    // } catch (error) {
+    //   console.error("Login failed:", error);
+    //   form.setError("root", {
+    //     type: "manual",
+    //     message: "Nepodarilo sa prihlasit",
+    //   });
+    // }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Prihlásenie</CardTitle>
+        <CardTitle>Zmena hesla</CardTitle>
         <CardDescription className="text-destructive">
           {form.formState.errors.root
             ? form.formState.errors.root?.message
@@ -78,7 +71,7 @@ export default function LoginForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
@@ -86,24 +79,12 @@ export default function LoginForm() {
                     <Input size={40} placeholder="shadcn" {...field} />
                   </FormControl>
                   <FormMessage />
+                  <FormDescription>
+                    Email, na ktorý je váš účet registrovaný.
+                  </FormDescription>
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Heslo</FormLabel>
-                  <FormControl>
-                    <Input placeholder="shadcn" type="password" {...field} />
-                  </FormControl>
-                  {/* <FormDescription>Vaše </FormDescription> */}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <Button
               type="submit"
               disabled={form.formState.isSubmitting}
@@ -112,20 +93,10 @@ export default function LoginForm() {
               {form.formState.isSubmitting && (
                 <Loader2 className="w-6 h-6 mr-2 animate-spin" />
               )}
-              Prihlásiť
+              Zaslať žiadosť o zmenu hesla
             </Button>
           </form>
         </Form>
-        <Separator className="my-4" />
-        <div className="mt-1"></div>
-        <Link href="/password">
-          <Paragraph>Zabudli ste heslo?</Paragraph>
-        </Link>
-        <Link href="/register">
-          <Paragraph>
-            Nemáte účet? <span className="text-primary">Zaregistrujte sa</span>
-          </Paragraph>
-        </Link>
       </CardContent>
     </Card>
   );

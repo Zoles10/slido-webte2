@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "../ui/separator";
+import Link from "next/link";
+import { Paragraph } from "../ui/typography/typography";
 
 const formSchema = z
   .object({
@@ -146,6 +149,12 @@ export default function RegisterForm() {
             <Button type="submit">Registrovať</Button>
           </form>
         </Form>
+        <Separator className="my-4" />
+        <Link href="/login">
+          <Paragraph>
+            Už máte účet? <span className="text-primary">Prihlásiť sa</span>
+          </Paragraph>
+        </Link>
       </CardContent>
     </Card>
   );
