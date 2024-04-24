@@ -5,14 +5,23 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { useState } from "react";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function Search() {
   const [isSearching, setIsSearching] = useState(false);
   const [failedSearch, setFailedSearch] = useState(false);
+  const router = useRouter();
 
-  const handleSearch = (value: number) => {
+  const handleSearch = (value: string) => {
     setIsSearching(true);
+
     setTimeout(() => {
+      if (value === "12345") {
+        setIsSearching(false);
+        router.push("/" + value);
+        router.refresh();
+        return;
+      }
       toast("Nepodarilo sa nájsť otázku s týmto kódom", {
         description: "Skúste iný kód alebo kontaktujte organizátora.",
         important: true,
@@ -37,7 +46,7 @@ export default function Search() {
           "justify-center " + (failedSearch && " animate-shake")
         }
         onComplete={(value) => {
-          handleSearch(parseInt(value));
+          handleSearch(value);
         }}
         disabled={isSearching}
       >
