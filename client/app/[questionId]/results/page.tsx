@@ -28,6 +28,10 @@ async function getData(): Promise<Result[]> {
       amount: 50,
       name: "Zilina",
     },
+    {
+      amount: 70,
+      name: "Nitra",
+    },
   ];
 }
 

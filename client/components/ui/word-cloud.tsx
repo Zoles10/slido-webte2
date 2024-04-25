@@ -1,9 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Text } from "@visx/text";
 import { scaleLog } from "@visx/scale";
 import Wordcloud from "@visx/wordcloud/lib/Wordcloud";
 import { Result } from "@/app/[questionId]/results/columns";
+import { useTheme } from "next-themes";
 
 interface WordCloudProps {
   width: number;
@@ -16,8 +17,6 @@ export interface WordData {
   value: number;
 }
 
-const colors = ["#FF7518", "#ffffff", "#ffffff"];
-
 function getRotationDegree() {
   const rand = Math.random();
   const degree = rand > 0.5 ? 60 : -60;
@@ -27,13 +26,25 @@ function getRotationDegree() {
 const fixedValueGenerator = () => 0.5;
 
 export default function WordCloud({ width, height, data }: WordCloudProps) {
-  const fontScale = scaleLog({
-    domain: [
-      Math.min(...data.map((w) => w.amount)),
-      Math.max(...data.map((w) => w.amount)),
-    ],
-    range: [10, 100],
-  });
+  const { theme } = useTheme();
+  const colors = [
+    "#FF7518",
+
+    theme == "dark" ? "#ffffff" : "#000000",
+    theme == "dark" ? "#ffffff" : "#000000",
+    theme == "dark" ? "#ffffff" : "#000000",
+  ];
+  const fontScale = useMemo(
+    () =>
+      scaleLog({
+        domain: [
+          Math.min(...data.map((w) => w.amount)),
+          Math.max(...data.map((w) => w.amount)),
+        ],
+        range: [10, 100],
+      }),
+    [data]
+  );
 
   const fontSizeSetter = (datum: WordData) => fontScale(datum.value);
 
