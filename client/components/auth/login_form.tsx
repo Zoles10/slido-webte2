@@ -46,21 +46,32 @@ export default function LoginForm() {
       password: "",
     },
   });
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const formData = new FormData();
+    formData.append('username', values.username);
+    formData.append('password', values.password);
 
-  // 2. Define a submit handler.
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    //add delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    try {
-      login(values.username, values.password);
-      router.push("/home");
-    } catch (error) {
-      console.error("Login failed:", error);
+    fetch('https://node73.webte.fei.stuba.sk/zaverecne/slido-webte2/server/auth/login.php', {
+      method: 'POST',
+      body: formData  // Sending as FormData to match PHP's $_POST handling
+    })
+    .then(response => response.json())  // Update here if your response is in JSON format
+    .then(data => {
+      console.log('Login response:', data);
+      console.log(data);
+      if (data.message === 'Login successful') {
+        router.push("/home"); // Redirect on successful login
+      } else {
+        throw new Error(data.error || 'Login failed');
+      }
+    })
+    .catch(error => {
+      console.error('Login failed:', error);
       form.setError("root", {
         type: "manual",
-        message: "Nepodarilo sa prihlasit",
+        message: error.message || "Failed to login",
       });
-    }
+    });
   };
 
   return (

@@ -8,15 +8,20 @@ error_reporting(E_ALL);
 include 'db.php';
 
 // Set default headers for CORS
-header("Access-Control-Allow-Origin: http://localhost:3000");
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+function sendCORSHeaders() {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+}
 
 // Respond to preflight request
 if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
+    sendCORSHeaders();
     exit(0); // No further action needed for pre-flight
 }
+
+sendCORSHeaders(); // Send CORS headers for other types of requests
 
 // Main logic for handling POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

@@ -26,7 +26,7 @@ error_reporting(E_ALL);
 $servername = "localhost:3306";
 $username = "xmalyv";
 $password = "pass";
-$database = "zadanie1";
+$database = "slido";
 
 $conn = new mysqli($servername, $username, $password, $database);
 

@@ -60,7 +60,7 @@ export default function RegisterForm() {
     formData.append('username', values.email); // Assuming you use the email as the username
     formData.append('password', values.password);
 
-    fetch('http://node73.webte.fei.stuba.sk/zaverecne/slido-webte2/server/auth/register.php', {
+    fetch('https://node73.webte.fei.stuba.sk/zaverecne/slido-webte2/server/auth/register.php', {
         method: 'POST',
         body: formData // Sending as FormData to match PHP's $_POST handling
     })
