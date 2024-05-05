@@ -52,7 +52,7 @@ function registerUser($conn)
 
   $username = $conn->real_escape_string($_POST['username']);
   $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-  $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+  $stmt = $conn->prepare("INSERT INTO User (email, password) VALUES (?, ?)");
   $stmt->bind_param("ss", $username, $password);
 
   if ($stmt->execute()) {
@@ -74,7 +74,7 @@ function loginUser($conn)
   $username = $conn->real_escape_string($_POST['username']);
   $password = $_POST['password'];
 
-  $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
+  $stmt = $conn->prepare("SELECT password FROM User WHERE email = ?");
   $stmt->bind_param("s", $username);
   $stmt->execute();
   $result = $stmt->get_result();
