@@ -128,13 +128,14 @@ function issueRefreshToken($conn, $userId)
 }
 
 
-function issueJwt($email)
+function issueJwt($userId, $email)
 {
   $issuedAt = time();
-  $expirationTime = $issuedAt + 3600;
+  $expirationTime = $issuedAt + 3600; // valid for 1 hour
   $payload = [
     'iat' => $issuedAt,
     'exp' => $expirationTime,
+    'userId' => $userId,  // Make sure userId is being set here
     'email' => $email
   ];
 
@@ -143,6 +144,7 @@ function issueJwt($email)
 
   return JWT::encode($payload, $jwtSecretKey, 'HS256');
 }
+
 
 function loginUser($conn)
 {
@@ -165,7 +167,7 @@ function loginUser($conn)
     $userId = $row['userID'];
 
     if (password_verify($password, $hashed_password)) {
-      $jwt = issueJwt($email);
+      $jwt = issueJwt($userId, $email);
       $refreshToken = issueRefreshToken($conn, $userId);
       echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken]);
     } else {
@@ -218,7 +220,7 @@ function refreshToken($conn)
     if (new DateTime() < new DateTime($row['expires_at'])) {
       $user_id = $row['user_id'];
       $email = getEmailFromUserId($conn, $user_id);
-      $newJwt = issueJwt($email);
+      $newJwt = issueJwt($user_id, $email);
       echo json_encode(['jwt' => $newJwt]);
     } else {
       echo json_encode(['error' => 'Refresh token expired']);
@@ -234,28 +236,24 @@ function verifyToken()
 {
   $config = require 'config.php';
   $jwtSecretKey = $config['jwt_secret'];
-  if (!isset(getallheaders()['Authorization'])) {
+  $headers = getallheaders();
+  if (!isset($headers['Authorization'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Authorization header missing']);
     exit;
   }
 
-  $authHeader = getallheaders()['Authorization'];
-  $arr = explode(' ', $authHeader);
-
-  if (count($arr) < 2) {
-    http_response_code(401); // Unauthorized
-    echo json_encode(['error' => 'Token not found in request']);
+  list($tokenType, $token) = explode(" ", $headers['Authorization'], 2);
+  if ($tokenType !== 'Bearer') {
+    http_response_code(401);
+    echo json_encode(['error' => 'Invalid token type']);
     exit;
   }
 
-  $token = $arr[1];
-
   try {
-    $decoded = JWT::decode($token, new Key($jwtSecretKey, 'HS256'));
-    return $decoded; // The decoded token which can be used to fetch user specific data
+    return JWT::decode($token, new Key($jwtSecretKey, 'HS256'));
   } catch (Exception $e) {
-    http_response_code(401); // Unauthorized
+    http_response_code(401);
     echo json_encode(['error' => $e->getMessage()]);
     exit;
   }
@@ -271,26 +269,57 @@ function getQuestions($conn)
   echo json_encode($questions);
 }
 
+function generateUniqueCode($conn)
+{
+  $code = '';
+  $count = 0;
+  do {
+    $code = sprintf("%05d", rand(0, 99999));
+    $query = "SELECT COUNT(*) FROM Question WHERE code = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $code);
+    $stmt->execute();
+    $stmt->bind_result($count);  // Bind the result of the query to the $count variable
+    $stmt->fetch();  // Fetch the result into the bound variable $count
+    $stmt->close();
+  } while ($count > 0);  // Ensure the code is unique by checking the database
+
+  return $code;
+}
+
+
 
 function postQuestion($conn)
 {
   $decoded = verifyToken();
   $questionData = json_decode(file_get_contents("php://input"), true);
-  if (!$questionData || !isset($questionData['question'])) {
-    echo json_encode(['error' => 'Invalid data provided']);
+
+  // Ensure all necessary fields are present
+  if (!$questionData || !isset($questionData['question_string']) || !isset($questionData['question_type']) || !isset($questionData['topic'])) {
+    echo json_encode(['error' => 'Invalid data provided - missing fields']);
     return;
   }
+  $question = $conn->real_escape_string($questionData['question_string']);
+  $question_type = $conn->real_escape_string($questionData['question_type']);
+  $topic = $conn->real_escape_string($questionData['topic']);
+  $active = isset($questionData['active']) ? (int)$questionData['active'] : 0;  // assuming 'active' is a boolean you may want to manage
+  $userId = $decoded->userId;  // Assuming the token includes 'userId' information
+  $code = generateUniqueCode($conn);
+  // Prepare the SQL statement
+  $stmt = $conn->prepare("INSERT INTO Question (created_by_ID, question_string, question_type, active, topic, code) VALUES (?, ?, ?, ?, ?, ?)");
+  // Ensure the parameters are bound in the correct order and types
+  $stmt->bind_param("issisi", $userId, $question, $question_type, $active, $topic, $code);
 
-  $question = $conn->real_escape_string($questionData['question']);
-  $stmt = $conn->prepare("INSERT INTO Question (question, user_id) VALUES (?, ?)");
-  $stmt->bind_param("si", $question, $decoded->userId);
+  // Execute the query
   if ($stmt->execute()) {
     echo json_encode(['message' => 'Question added successfully']);
   } else {
     echo json_encode(['error' => $stmt->error]);
   }
+
   $stmt->close();
 }
+
 
 
 
