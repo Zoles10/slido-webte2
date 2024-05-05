@@ -59,9 +59,8 @@ export default function RegisterForm() {
     const formData = new FormData();
     formData.append("username", values.email); // Assuming you use the email as the username
     formData.append("password", values.password);
-    formData.append("action", "register");
     fetch(
-      "https://node98.webte.fei.stuba.sk/slido-webte2/server/api.php?register",
+      "https://node98.webte.fei.stuba.sk/slido-webte2/server/api/register",
       {
         method: "POST",
         body: formData, // Sending as FormData to match PHP's $_POST handling

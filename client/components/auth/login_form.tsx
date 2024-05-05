@@ -50,14 +50,10 @@ export default function LoginForm() {
     const formData = new FormData();
     formData.append("username", values.username);
     formData.append("password", values.password);
-    formData.append("action", "login");
-    fetch(
-      "https://node98.webte.fei.stuba.sk/slido-webte2/server/api.php?login",
-      {
-        method: "POST",
-        body: formData, // Sending as FormData to match PHP's $_POST handling
-      }
-    )
+    fetch("https://node98.webte.fei.stuba.sk/slido-webte2/server/api/login", {
+      method: "POST",
+      body: formData, // Sending as FormData to match PHP's $_POST handling
+    })
       .then((response) => response.json()) // Update here if your response is in JSON format
       .then((data) => {
         console.log("Login response:", data);
