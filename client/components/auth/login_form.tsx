@@ -48,30 +48,33 @@ export default function LoginForm() {
   });
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const formData = new FormData();
-    formData.append('username', values.username);
-    formData.append('password', values.password);
-
-    fetch('https://node73.webte.fei.stuba.sk/zaverecne/slido-webte2/server/auth/login.php', {
-      method: 'POST',
-      body: formData  // Sending as FormData to match PHP's $_POST handling
-    })
-    .then(response => response.json())  // Update here if your response is in JSON format
-    .then(data => {
-      console.log('Login response:', data);
-      console.log(data);
-      if (data.message === 'Login successful') {
-        router.push("/home"); // Redirect on successful login
-      } else {
-        throw new Error(data.error || 'Login failed');
+    formData.append("username", values.username);
+    formData.append("password", values.password);
+    formData.append("action", "login");
+    fetch(
+      "https://node98.webte.fei.stuba.sk/slido-webte2/server/api.php?login",
+      {
+        method: "POST",
+        body: formData, // Sending as FormData to match PHP's $_POST handling
       }
-    })
-    .catch(error => {
-      console.error('Login failed:', error);
-      form.setError("root", {
-        type: "manual",
-        message: error.message || "Failed to login",
+    )
+      .then((response) => response.json()) // Update here if your response is in JSON format
+      .then((data) => {
+        console.log("Login response:", data);
+        console.log(data);
+        if (data.message === "Login successful") {
+          router.push("/home"); // Redirect on successful login
+        } else {
+          throw new Error(data.error || "Login failed");
+        }
+      })
+      .catch((error) => {
+        console.error("Login failed:", error);
+        form.setError("root", {
+          type: "manual",
+          message: error.message || "Failed to login",
+        });
       });
-    });
   };
 
   return (
