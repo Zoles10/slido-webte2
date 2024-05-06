@@ -35,6 +35,7 @@ if (count($pathParts) < 4) {
 
 $apiPrefix = $pathParts[2];
 $action = $pathParts[3];
+$firstParam = $pathParts[4] ?? null;
 
 if ($apiPrefix !== 'api') {
   http_response_code(404);
@@ -47,7 +48,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
     handlePostActions($action, $conn);
     break;
   case 'GET':
-    handleGetActions($action, $conn);
+    handleGetActions($action, $firstParam, $conn);
     break;
   default:
     http_response_code(405);
@@ -70,17 +71,28 @@ function handlePostActions($action, $conn)
     case 'question':
       postQuestion($conn);
       break;
+    case 'answer':
+      postAnswer($conn);
+      break;
     default:
       echo json_encode(['error' => 'Invalid action']);
       break;
   }
 }
 
-function handleGetActions($action, $conn)
+function handleGetActions($action, $firstParam, $conn)
 {
   switch ($action) {
     case 'question':
+      if ($firstParam) {
+        getQuestionByCode($conn, $firstParam);
+      } else {
+        getQuestions($conn);
+      }
       getQuestions($conn);
+      break;
+    case 'answer':
+      getAnswers($conn);
       break;
     default:
       echo json_encode(['error' => 'Invalid action']);
@@ -110,13 +122,13 @@ function registerUser($conn)
   $stmt->close();
 }
 
-function issueRefreshToken($conn, $userId)
+function issueRefreshToken($conn, $user_id)
 {
-  $expiresAt = date('Y-m-d H:i:s', strtotime('+7 days'));
+  $expires_at = date('Y-m-d H:i:s', strtotime('+7 days'));
   $refreshToken = bin2hex(random_bytes(64));
 
   $stmt = $conn->prepare("INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
-  $stmt->bind_param('iss', $userId, $refreshToken, $expiresAt);
+  $stmt->bind_param('iss', $user_id, $refreshToken, $expires_at);
   if (!$stmt->execute()) {
     echo json_encode(['error' => "Error: " . $stmt->error]);
     $stmt->close();
@@ -128,14 +140,14 @@ function issueRefreshToken($conn, $userId)
 }
 
 
-function issueJwt($userId, $email)
+function issueJwt($user_id, $email)
 {
   $issuedAt = time();
-  $expirationTime = $issuedAt + 3600; // valid for 1 hour
+  $expirationTime = $issuedAt + 3600;
   $payload = [
     'iat' => $issuedAt,
     'exp' => $expirationTime,
-    'userId' => $userId,  // Make sure userId is being set here
+    'user_id' => $user_id,
     'email' => $email
   ];
 
@@ -156,7 +168,7 @@ function loginUser($conn)
   $email = $conn->real_escape_string($_POST['username']);
   $password = $_POST['password'];
 
-  $stmt = $conn->prepare("SELECT userID, password FROM User WHERE email = ?");
+  $stmt = $conn->prepare("SELECT user_id, password FROM User WHERE email = ?");
   $stmt->bind_param("s", $email);
   $stmt->execute();
   $result = $stmt->get_result();
@@ -164,11 +176,11 @@ function loginUser($conn)
   if ($result->num_rows == 1) {
     $row = $result->fetch_assoc();
     $hashed_password = $row['password'];
-    $userId = $row['userID'];
+    $user_id = $row['user_id'];
 
     if (password_verify($password, $hashed_password)) {
-      $jwt = issueJwt($userId, $email);
-      $refreshToken = issueRefreshToken($conn, $userId);
+      $jwt = issueJwt($user_id, $email);
+      $refreshToken = issueRefreshToken($conn, $user_id);
       echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken]);
     } else {
       echo json_encode(['error' => 'Invalid password']);
@@ -180,10 +192,10 @@ function loginUser($conn)
   $stmt->close();
 }
 
-function getEmailFromUserId($conn, $userId)
+function getEmailFromUserId($conn, $user_id)
 {
-  $stmt = $conn->prepare("SELECT email FROM User WHERE userID = ?");
-  $stmt->bind_param('i', $userId);
+  $stmt = $conn->prepare("SELECT email FROM User WHERE user_id = ?");
+  $stmt->bind_param('i', $user_id);
   $stmt->execute();
   $result = $stmt->get_result();
   if ($row = $result->fetch_assoc()) {
@@ -195,12 +207,12 @@ function getEmailFromUserId($conn, $userId)
 
 function getUserIdByEmail($conn, $email)
 {
-  $stmt = $conn->prepare("SELECT userID FROM User WHERE email = ?");
+  $stmt = $conn->prepare("SELECT user_id FROM User WHERE email = ?");
   $stmt->bind_param('s', $email);
   $stmt->execute();
   $result = $stmt->get_result();
   if ($row = $result->fetch_assoc()) {
-    return $row['userID'];
+    return $row['user_id'];
   } else {
     return null; // Handle this case appropriately
   }
@@ -306,8 +318,7 @@ function postQuestion($conn)
   $userId = $decoded->userId;  // Assuming the token includes 'userId' information
   $code = generateUniqueCode($conn);
   // Prepare the SQL statement
-  $stmt = $conn->prepare("INSERT INTO Question (created_by_ID, question_string, question_type, active, topic, code) VALUES (?, ?, ?, ?, ?, ?)");
-  // Ensure the parameters are bound in the correct order and types
+  $stmt = $conn->prepare("INSERT INTO Question (user_id, question_string, question_type, active, topic, code) VALUES (?, ?, ?, ?, ?, ?)");
   $stmt->bind_param("issisi", $userId, $question, $question_type, $active, $topic, $code);
 
   // Execute the query
@@ -315,6 +326,72 @@ function postQuestion($conn)
     echo json_encode(['message' => 'Question added successfully']);
   } else {
     echo json_encode(['error' => $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+function getAnswers($conn)
+{
+  $question_id = isset($_GET['question_id']) ? intval($_GET['question_id']) : null;
+
+  if ($question_id) {
+    $stmt = $conn->prepare("SELECT * FROM Answer WHERE question_id = ?");
+    $stmt->bind_param("i", $question_id);
+  } else {
+    $stmt = $conn->prepare("SELECT * FROM Answer");
+  }
+
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $answers = $result->fetch_all(MYSQLI_ASSOC);
+
+  echo json_encode($answers);
+  $stmt->close();
+}
+
+function postAnswer($conn)
+{
+  $data = json_decode(file_get_contents("php://input"), true);
+
+  if (!isset($data['question_id'], $data['answer_string'], $data['user_id'])) {
+    echo json_encode(['error' => 'Missing required fields']);
+    return;
+  }
+
+  $question_id = $data['question_id'];
+  $answer_string = $conn->real_escape_string($data['answer_string']);
+  $user_id = $data['user_id'];
+
+  $stmt = $conn->prepare("INSERT INTO Answer (question_id, answer_string, user_id) VALUES (?, ?, ?)");
+  $stmt->bind_param("isi", $question_id, $answer_string, $user_id);
+
+  if ($stmt->execute()) {
+    echo json_encode(['message' => 'Answer posted successfully']);
+  } else {
+    echo json_encode(['error' => $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+function getQuestionByCode($conn, $code)
+{
+  if (!$code) {
+    echo json_encode(['error' => 'Missing code parameter']);
+    return;
+  }
+
+  $stmt = $conn->prepare("SELECT * FROM Question WHERE code = ?");
+  $stmt->bind_param("s", $code);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  if ($result->num_rows > 0) {
+    $question = $result->fetch_assoc();
+    echo json_encode($question);
+  } else {
+    echo json_encode(['message' => 'No question found with the specified code']);
   }
 
   $stmt->close();
