@@ -1,3 +1,4 @@
 
 .vscode/sftp.json
 client/utils/config.tsx
+server/config.php
