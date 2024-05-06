@@ -1,27 +1,35 @@
 "use client";
 
-import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { useState } from "react";
-import { CircleAlert, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { CircleAlert, Loader2 } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 
 export default function Search() {
   const [isSearching, setIsSearching] = useState(false);
   const [failedSearch, setFailedSearch] = useState(false);
   const router = useRouter();
 
-  const handleSearch = (value: string) => {
+  const handleSearch = async (value: string) => {
     setIsSearching(true);
 
-    setTimeout(() => {
-      if (value === "12345") {
+    try {
+      // Replace the URL with your API endpoint and include the ID in the query
+      const response = await fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question/${value}`);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      if (data) {
         setIsSearching(false);
         router.push("/" + value);
         router.refresh();
         return;
       }
+    } catch (error) {
+      console.error("Fetch error:", error);
       toast("Nepodarilo sa nájsť otázku s týmto kódom", {
         description: "Skúste iný kód alebo kontaktujte organizátora.",
         important: true,
@@ -31,9 +39,9 @@ export default function Search() {
       setTimeout(() => {
         setFailedSearch(false);
       }, 300);
+    }
 
-      setIsSearching(false);
-    }, 1000);
+    setIsSearching(false);
   };
 
   return (
@@ -45,9 +53,7 @@ export default function Search() {
         containerClassName={
           "justify-center " + (failedSearch && " animate-shake")
         }
-        onComplete={(value) => {
-          handleSearch(value);
-        }}
+        onComplete={handleSearch}
         disabled={isSearching}
       >
         <InputOTPGroup>

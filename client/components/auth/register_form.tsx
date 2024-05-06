@@ -19,6 +19,7 @@ import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
 import { apiUrl } from "@/utils/config";
 
+import { useRouter } from "next/navigation";
 const formSchema = z
   .object({
     name: z.string().min(1, {
@@ -50,6 +51,7 @@ export default function RegisterForm() {
       password_confirmation: "",
     },
   });
+  const router = useRouter();
 
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -66,7 +68,8 @@ export default function RegisterForm() {
     })
       .then((response) => response.text()) // Assuming the response is text, not JSON
       .then((data) => {
-        console.log(data); // Log the success or error message from the server
+        console.log(data);
+        router.push("/");  // Log the success or error message from the server
         // Here you can handle redirection to login or further actions
       })
       .catch((error) => {
