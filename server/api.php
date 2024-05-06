@@ -398,6 +398,85 @@ function getQuestionByCode($conn, $code)
   $stmt->close();
 }
 
+//change password function
+function changePassword($conn) {
+  if (!isset($_POST['username']) || !isset($_POST['new_password'])) {
+      echo json_encode(['error' => 'Missing username or new password']);
+      exit;
+  }
+
+  $username = $conn->real_escape_string($_POST['username']);
+  $newPassword = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+
+  $stmt = $conn->prepare("SELECT * FROM User WHERE email = ?");
+  $stmt->bind_param("s", $username);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows == 0) {
+      echo json_encode(['error' => 'User not found']);
+      $stmt->close();
+      exit;
+  }
+  $stmt->close();
+
+  $stmt = $conn->prepare("UPDATE User SET password = ? WHERE email = ?");
+  $stmt->bind_param("ss", $newPassword, $username);
+
+  if ($stmt->execute()) {
+      echo json_encode(['message' => 'Password updated successfully']);
+  } else {
+      echo json_encode(['error' => "Error updating password: " . $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+//change name
+function changeUsername($conn) {
+  if (!isset($_POST['current_username']) || !isset($_POST['new_username'])) {
+      echo json_encode(['error' => 'Missing current username or new username']);
+      exit;
+  }
+
+  $currentUsername = $conn->real_escape_string($_POST['current_username']);
+  $newUsername = $conn->real_escape_string($_POST['new_username']);
+
+  // First, check if the current username exists in the database
+  $stmt = $conn->prepare("SELECT * FROM User WHERE email = ?");
+  $stmt->bind_param("s", $currentUsername);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows == 0) {
+      echo json_encode(['error' => 'Current user not found']);
+      $stmt->close();
+      exit;
+  }
+  $stmt->close();
+
+  // Check if the new username is already taken
+  $stmt = $conn->prepare("SELECT * FROM User WHERE email = ?");
+  $stmt->bind_param("s", $newUsername);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows > 0) {
+      echo json_encode(['error' => 'New username is already taken']);
+      $stmt->close();
+      exit;
+  }
+  $stmt->close();
+
+  // Proceed to update the username
+  $stmt = $conn->prepare("UPDATE User SET email = ? WHERE email = ?");
+  $stmt->bind_param("ss", $newUsername, $currentUsername);
+
+  if ($stmt->execute()) {
+      echo json_encode(['message' => 'Username updated successfully']);
+  } else {
+      echo json_encode(['error' => "Error updating username: " . $stmt->error]);
+  }
+
+  $stmt->close();
+}
 
 
 
