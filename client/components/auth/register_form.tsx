@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "../ui/separator";
 import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
+import { urlBase } from "@/utils/config";
 
 const formSchema = z
   .object({
@@ -59,13 +60,10 @@ export default function RegisterForm() {
     const formData = new FormData();
     formData.append("username", values.email); // Assuming you use the email as the username
     formData.append("password", values.password);
-    fetch(
-      "https://node98.webte.fei.stuba.sk/slido-webte2/server/api/register",
-      {
-        method: "POST",
-        body: formData, // Sending as FormData to match PHP's $_POST handling
-      }
-    )
+    fetch(`${urlBase}/server/api/register`, {
+      method: "POST",
+      body: formData, // Sending as FormData to match PHP's $_POST handling
+    })
       .then((response) => response.text()) // Assuming the response is text, not JSON
       .then((data) => {
         console.log(data); // Log the success or error message from the server

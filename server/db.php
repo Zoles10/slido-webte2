@@ -6,6 +6,8 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
   header('Access-Control-Max-Age: 86400');    // cache for 1 day
 }
 
+$config = require 'config.php';
+
 // Access-Control headers are received during OPTIONS requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
@@ -24,8 +26,8 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 $servername = "localhost:3306";
-$username = "xraffay";
-$password = "xQt@z";
+$username = $config['username'];
+$password = $config['password'];
 $database = "slido";
 
 $conn = new mysqli($servername, $username, $password, $database);

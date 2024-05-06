@@ -27,6 +27,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
 import { Separator } from "../ui/separator";
+import { urlBase } from "@/utils/config";
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -50,7 +51,7 @@ export default function LoginForm() {
     const formData = new FormData();
     formData.append("username", values.username);
     formData.append("password", values.password);
-    fetch("https://node98.webte.fei.stuba.sk/slido-webte2/server/api/login", {
+    fetch(`${urlBase}/server/api/login`, {
       method: "POST",
       body: formData, // Sending as FormData to match PHP's $_POST handling
     })
