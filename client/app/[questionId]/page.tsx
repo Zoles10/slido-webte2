@@ -20,6 +20,14 @@ function getAnswer(questionId: any) {
     });
 }
 
+async function getDataQuestion(questionId: any) {
+  const response = await fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question/${questionId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch');
+  }
+  return response.json();
+}
+
 async function postAnswer(questionId: any, answer: string) {
   const data = await getAnswer(questionId);
   const user = data.user_id;
@@ -38,11 +46,12 @@ async function postAnswer(questionId: any, answer: string) {
   });
 }
 
-function Page({ params } : { params: { questionId: string } }) {
+export default async function Page({ params } : { params: { questionId: string } }) {
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   //const router = useRouter();
+  const data = await getDataQuestion(params.questionId);
 
   const handleSubmit = (e: { preventDefault: () => void; } ) => {
     e.preventDefault(); // Prevent default form submission behavior
@@ -50,8 +59,6 @@ function Page({ params } : { params: { questionId: string } }) {
     postAnswer(params.questionId, answer)
       .then(apiResponse => {
         console.log('Response:', apiResponse);
-        // Optionally redirect or handle the response here
-       // router.push(`/${params.questionId}/results`); // Redirect to results page
       })
       .catch(error => {
         console.error('Error posting answer:', error);
@@ -72,10 +79,10 @@ function Page({ params } : { params: { questionId: string } }) {
         </div>
       </header>
       <main className="flex flex-col p-2 items-center">
-        <TypographyH2>Question {params.questionId}</TypographyH2>
+        <TypographyH2>{data.question_string}</TypographyH2>
         <form onSubmit={handleSubmit}>
-          <Input type="text" placeholder="Answer" value={answer} onChange={(e) => setAnswer(e.target.value)} disabled={loading} />
-          <Button type="submit" disabled={loading}>{loading ? 'Submitting...' : 'Submit Answer'}</Button>
+          <Input type="text" placeholder="Answer" value={answer}  onChange={(e) => setAnswer(e.target.value)} disabled={loading} />
+          <Button type="submit" style={{marginTop:'1rem',marginBottom:'1rem'}} disabled={loading}>{loading ? 'Submitting...' : 'Submit Answer'}</Button>
           {error && <Paragraph className="text-red-500">{error}</Paragraph>}
         </form>
         <Link href={`/${params.questionId}/results`}>
@@ -86,4 +93,4 @@ function Page({ params } : { params: { questionId: string } }) {
   );
 }
 
-export default Page;
+

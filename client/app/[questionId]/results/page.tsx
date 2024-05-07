@@ -27,7 +27,6 @@ async function getAnswers(questionId: any) {
       }
       return response.json();
     })
-  // Updated to handle actual response format
 }
 
 export default async function ResultsPage({
