@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "../ui/separator";
 import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
-import { urlBase } from "@/utils/config";
+import { apiUrl } from "@/utils/config";
 
 const formSchema = z
   .object({
@@ -60,7 +60,7 @@ export default function RegisterForm() {
     const formData = new FormData();
     formData.append("username", values.email); // Assuming you use the email as the username
     formData.append("password", values.password);
-    fetch(`${urlBase}/server/api/register`, {
+    fetch(apiUrl + "register", {
       method: "POST",
       body: formData, // Sending as FormData to match PHP's $_POST handling
     })
