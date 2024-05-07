@@ -1,10 +1,12 @@
 "use client";
 import API from "@/lib/axios";
 import { createContext, useContext, useState, ReactNode } from "react";
+import { apiUrl } from "@/utils/config";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 type User = {
   id: number;
-  name: string;
   email: string;
 };
 
@@ -12,6 +14,7 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  isAuthenticated: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,27 +24,59 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  const login = async (email: string, password: string) => {
-    // try {
-    //   const response = await API.post<{ token: string; user: User }>("/login", {
-    //     email,
-    //     password,
-    //   });
-    //   const { token, user } = response.data;
-    //   localStorage.setItem("jwtToken", token);
-    //   setUser(user);
-    // } catch (error) {
-    //   console.error("Login failed:", error);
-    //   throw error;
-    // }
+  // const login = async (email: string, password: string) => {
+  //   // try {
+  //   //   const response = await API.post<{ token: string; user: User }>("/login", {
+  //   //     email,
+  //   //     password,
+  //   //   });
+  //   //   const { token, user } = response.data;
+  //   //   localStorage.setItem("jwtToken", token);
+  //   //   setUser(user);
+  //   // } catch (error) {
+  //   //   console.error("Login failed:", error);
+  //   //   throw error;
+  //   // }
 
-    //dummy
-    const user = { id: 1, name: "John Doe", email: "x@x.sk" };
-    setUser(user);
-    localStorage.setItem("jwtToken", "dummy");
-    document.cookie = `jwtToken=${"dummy"}; path=/; max-age=3600; secure; SameSite=None`;
+  //   //dummy
+  //   const user = { id: 1, name: "John Doe", email: "x@x.sk" };
+  //   setUser(user);
+  //   localStorage.setItem("jwtToken", "dummy");
+  //   document.cookie = `jwtToken=${"dummy"}; path=/; max-age=3600; secure; SameSite=None`;
+  // };
+
+  const login = async (username: string, password: string) => {
+    fetch(apiUrl + "login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username: username, password: password }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.message) {
+          localStorage.setItem("token", data.jwt);
+          localStorage.setItem("refreshToken", data.refreshToken);
+          document.cookie = `jwtToken=${data.token}; path=/; max-age=3600; secure; SameSite=None`;
+          console.log("Login successful:", data);
+          const userData: User = {
+            id: data.user_id,
+            email: data.email,
+          };
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
+          throw new Error(data.error || "Login failed");
+        }
+      })
+      .catch((error) => {
+        console.error("Login failed:", error);
+      });
   };
 
   const logout = () => {
@@ -51,8 +86,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
   };
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/home");
+      router.refresh();
+      console.log("User logged in:", user); // Now this will log the updated user
+    }
+  }, [isAuthenticated, user, router]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

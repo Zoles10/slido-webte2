@@ -37,7 +37,7 @@ const formSchema = z.object({
 });
 
 export default function LoginForm() {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const router = useRouter();
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -48,30 +48,11 @@ export default function LoginForm() {
     },
   });
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const formData = new FormData();
-    formData.append("username", values.username);
-    formData.append("password", values.password);
-    fetch(apiUrl + "login", {
-      method: "POST",
-      body: formData, // Sending as FormData to match PHP's $_POST handling
-    })
-      .then((response) => response.json()) // Update here if your response is in JSON format
-      .then((data) => {
-        console.log("Login response:", data);
-        console.log(data);
-        if (data.message === "Login successful") {
-          router.push("/home"); // Redirect on successful login
-        } else {
-          throw new Error(data.error || "Login failed");
-        }
-      })
-      .catch((error) => {
-        console.error("Login failed:", error);
-        form.setError("root", {
-          type: "manual",
-          message: error.message || "Failed to login",
-        });
-      });
+    login(values.username, values.password);
+    if (isAuthenticated) {
+      console.log("logged in");
+      router.push("/home");
+    }
   };
 
   return (

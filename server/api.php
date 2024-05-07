@@ -160,13 +160,17 @@ function issueJwt($user_id, $email)
 
 function loginUser($conn)
 {
-  if (!isset($_POST['username']) || !isset($_POST['password'])) {
-    echo json_encode(['error' => 'Missing email or password']);
+  $inputJSON = file_get_contents('php://input');
+  $input = json_decode($inputJSON, TRUE);
+
+  if (!isset($input['username']) || !isset($input['password'])) {
+    echo json_encode(['error' => 'Missing email or password', 'input' => $input]);
     exit;
   }
 
-  $email = $conn->real_escape_string($_POST['username']);
-  $password = $_POST['password'];
+  $email = $conn->real_escape_string($input['username']);
+  $password = $input['password'];
+
 
   $stmt = $conn->prepare("SELECT user_id, password FROM User WHERE email = ?");
   $stmt->bind_param("s", $email);
@@ -181,7 +185,7 @@ function loginUser($conn)
     if (password_verify($password, $hashed_password)) {
       $jwt = issueJwt($user_id, $email);
       $refreshToken = issueRefreshToken($conn, $user_id);
-      echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken]);
+      echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken, 'user_id' => $user_id, 'email' => $email, 'expires_at' => date('Y-m-d H:i:s', strtotime('+7 days')), 'issued_at' => date('Y-m-d H:i:s')]);
     } else {
       echo json_encode(['error' => 'Invalid password']);
     }
@@ -306,16 +310,16 @@ function postQuestion($conn)
   $decoded = verifyToken();
   $questionData = json_decode(file_get_contents("php://input"), true);
 
-  // Ensure all necessary fields are present
-  if (!$questionData || !isset($questionData['question_string']) || !isset($questionData['question_type']) || !isset($questionData['topic'])) {
+  if (!$questionData || !isset($questionData['question_string']) || !isset($questionData['question_type']) || !isset($questionData['topic']) || !isset($questionData['user_id'])) {
+    http_response_code(400);
     echo json_encode(['error' => 'Invalid data provided - missing fields']);
     return;
   }
   $question = $conn->real_escape_string($questionData['question_string']);
   $question_type = $conn->real_escape_string($questionData['question_type']);
   $topic = $conn->real_escape_string($questionData['topic']);
-  $active = isset($questionData['active']) ? (int)$questionData['active'] : 0;  // assuming 'active' is a boolean you may want to manage
-  $userId = $decoded->userId;  // Assuming the token includes 'userId' information
+  $active = isset($questionData['active']) ? (int)$questionData['active'] : 0;
+  $userId =  $questionData['user_id'];
   $code = generateUniqueCode($conn);
   // Prepare the SQL statement
   $stmt = $conn->prepare("INSERT INTO Question (user_id, question_string, question_type, active, topic, code) VALUES (?, ?, ?, ?, ?, ?)");
@@ -323,7 +327,8 @@ function postQuestion($conn)
 
   // Execute the query
   if ($stmt->execute()) {
-    echo json_encode(['message' => 'Question added successfully']);
+
+    echo json_encode(['message' => 'Question added successfully', 'code' => $code]);
   } else {
     echo json_encode(['error' => $stmt->error]);
   }
@@ -355,6 +360,7 @@ function postAnswer($conn)
   $data = json_decode(file_get_contents("php://input"), true);
 
   if (!isset($data['question_id'], $data['answer_string'], $data['user_id'])) {
+    http_response_code(400);
     echo json_encode(['error' => 'Missing required fields']);
     return;
   }
@@ -367,8 +373,10 @@ function postAnswer($conn)
   $stmt->bind_param("isi", $question_id, $answer_string, $user_id);
 
   if ($stmt->execute()) {
+    http_response_code(201);
     echo json_encode(['message' => 'Answer posted successfully']);
   } else {
+    http_response_code(500); // Internal Server Error
     echo json_encode(['error' => $stmt->error]);
   }
 
