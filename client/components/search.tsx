@@ -22,11 +22,22 @@ export default function Search() {
         throw new Error("Network response was not ok");
       }
       const data = await response.json();
-      if (data) {
+      if (data.question_id) {
         setIsSearching(false);
         router.push("/" + value);
         router.refresh();
         return;
+      }
+      else{
+        toast("Nepodarilo sa nájsť otázku s týmto kódom", {
+          description: "Skúste iný kód alebo kontaktujte organizátora.",
+          important: true,
+          icon: <CircleAlert className="text-destructive" />,
+        });
+        setFailedSearch(true);
+        setTimeout(() => {
+          setFailedSearch(false);
+        }, 300);
       }
     } catch (error) {
       console.error("Fetch error:", error);

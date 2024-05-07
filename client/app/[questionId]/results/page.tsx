@@ -8,7 +8,14 @@ import WorldCloud from "@/components/ui/word-cloud";
 import WordCloud from "@/components/ui/word-cloud";
 import ResultsView from "./results-view";
 import { Loader2 } from "lucide-react";
-
+async function getDataQuestion(questionId: any) {
+  // Assuming your API endpoint returns data based on questionId
+  const response = await fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question/${questionId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch');
+  }
+  return response.json();
+}
 async function getData(): Promise<Result[]> {
   // Fetch data from your API here.
   return [
@@ -44,9 +51,19 @@ export default async function ResultsPage({
     cloud: boolean;
   };
 }) {
-  const data = await getData();
+  console.log("here");
+  let apiData = null;
+  let data = null;
+  try {
+    data = await getData();
+    apiData = await getDataQuestion(params.questionId);
+    console.log('API Data:', apiData);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+
   const showCloud = searchParams.cloud;
-  console.log(showCloud);
+  console.log('Show Cloud:', showCloud);
 
   return (
     <div>
@@ -58,7 +75,7 @@ export default async function ResultsPage({
         </div>
       </header>
       <main className="flex  flex-col p-2 items-center">
-        <TypographyH2>Question {params.questionId}</TypographyH2>
+        <TypographyH2>Question {apiData.question_string} </TypographyH2>
         <Paragraph>This is a question results page</Paragraph>
 
         {data ? (
@@ -70,3 +87,6 @@ export default async function ResultsPage({
     </div>
   );
 }
+
+
+
