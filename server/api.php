@@ -90,7 +90,6 @@ function handleGetActions($action, $firstParam, $conn)
       } else {
         getQuestions($conn);
       }
-      getQuestions($conn);
       break;
     case 'answer':
       getAnswers($conn);
@@ -399,10 +398,11 @@ function getQuestionByCode($conn, $code)
 }
 
 //change password function
-function changePassword($conn) {
+function changePassword($conn)
+{
   if (!isset($_POST['username']) || !isset($_POST['new_password'])) {
-      echo json_encode(['error' => 'Missing username or new password']);
-      exit;
+    echo json_encode(['error' => 'Missing username or new password']);
+    exit;
   }
 
   $username = $conn->real_escape_string($_POST['username']);
@@ -413,9 +413,9 @@ function changePassword($conn) {
   $stmt->execute();
   $result = $stmt->get_result();
   if ($result->num_rows == 0) {
-      echo json_encode(['error' => 'User not found']);
-      $stmt->close();
-      exit;
+    echo json_encode(['error' => 'User not found']);
+    $stmt->close();
+    exit;
   }
   $stmt->close();
 
@@ -423,19 +423,20 @@ function changePassword($conn) {
   $stmt->bind_param("ss", $newPassword, $username);
 
   if ($stmt->execute()) {
-      echo json_encode(['message' => 'Password updated successfully']);
+    echo json_encode(['message' => 'Password updated successfully']);
   } else {
-      echo json_encode(['error' => "Error updating password: " . $stmt->error]);
+    echo json_encode(['error' => "Error updating password: " . $stmt->error]);
   }
 
   $stmt->close();
 }
 
 //change name
-function changeUsername($conn) {
+function changeUsername($conn)
+{
   if (!isset($_POST['current_username']) || !isset($_POST['new_username'])) {
-      echo json_encode(['error' => 'Missing current username or new username']);
-      exit;
+    echo json_encode(['error' => 'Missing current username or new username']);
+    exit;
   }
 
   $currentUsername = $conn->real_escape_string($_POST['current_username']);
@@ -447,9 +448,9 @@ function changeUsername($conn) {
   $stmt->execute();
   $result = $stmt->get_result();
   if ($result->num_rows == 0) {
-      echo json_encode(['error' => 'Current user not found']);
-      $stmt->close();
-      exit;
+    echo json_encode(['error' => 'Current user not found']);
+    $stmt->close();
+    exit;
   }
   $stmt->close();
 
@@ -459,9 +460,9 @@ function changeUsername($conn) {
   $stmt->execute();
   $result = $stmt->get_result();
   if ($result->num_rows > 0) {
-      echo json_encode(['error' => 'New username is already taken']);
-      $stmt->close();
-      exit;
+    echo json_encode(['error' => 'New username is already taken']);
+    $stmt->close();
+    exit;
   }
   $stmt->close();
 
@@ -470,9 +471,9 @@ function changeUsername($conn) {
   $stmt->bind_param("ss", $newUsername, $currentUsername);
 
   if ($stmt->execute()) {
-      echo json_encode(['message' => 'Username updated successfully']);
+    echo json_encode(['message' => 'Username updated successfully']);
   } else {
-      echo json_encode(['error' => "Error updating username: " . $stmt->error]);
+    echo json_encode(['error' => "Error updating username: " . $stmt->error]);
   }
 
   $stmt->close();
