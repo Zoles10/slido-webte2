@@ -1,3 +1,5 @@
+"use client";
+import React from 'react';
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -8,38 +10,24 @@ import WorldCloud from "@/components/ui/word-cloud";
 import WordCloud from "@/components/ui/word-cloud";
 import ResultsView from "./results-view";
 import { Loader2 } from "lucide-react";
+
 async function getDataQuestion(questionId: any) {
-  // Assuming your API endpoint returns data based on questionId
   const response = await fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question/${questionId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch');
   }
   return response.json();
 }
-async function getData(): Promise<Result[]> {
-  // Fetch data from your API here.
-  return [
-    {
-      amount: 100,
-      name: "Bratislava",
-    },
-    {
-      amount: 20,
-      name: "Poprad",
-    },
-    {
-      amount: 10,
-      name: "Kosice",
-    },
-    {
-      amount: 50,
-      name: "Zilina",
-    },
-    {
-      amount: 70,
-      name: "Nitra",
-    },
-  ];
+
+async function getAnswers(questionId: any) {
+  return fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/answer/${questionId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to fetch question');
+      }
+      return response.json();
+    })
+  // Updated to handle actual response format
 }
 
 export default async function ResultsPage({
@@ -51,13 +39,18 @@ export default async function ResultsPage({
     cloud: boolean;
   };
 }) {
-  console.log("here");
   let apiData = null;
   let data = null;
+  let answerList = null;
+
   try {
-    data = await getData();
+    data = await getAnswers(params.questionId);
+    console.log("Data answers: ", data);
+    answerList = data;
+    console.log('Answer List:', answerList);
+
     apiData = await getDataQuestion(params.questionId);
-    console.log('API Data:', apiData);
+
   } catch (error) {
     console.error('Error fetching data:', error);
   }
@@ -74,12 +67,12 @@ export default async function ResultsPage({
           <ModeToggle />
         </div>
       </header>
-      <main className="flex  flex-col p-2 items-center">
+      <main className="flex flex-col p-2 items-center">
         <TypographyH2>Question {apiData.question_string} </TypographyH2>
         <Paragraph>This is a question results page</Paragraph>
 
         {data ? (
-          <ResultsView data={data} />
+          <ResultsView data={answerList} />
         ) : (
           <Loader2 className="animate-spin" />
         )}
@@ -87,6 +80,3 @@ export default async function ResultsPage({
     </div>
   );
 }
-
-
-
