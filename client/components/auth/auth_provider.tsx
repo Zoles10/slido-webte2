@@ -28,27 +28,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // const login = async (email: string, password: string) => {
-  //   // try {
-  //   //   const response = await API.post<{ token: string; user: User }>("/login", {
-  //   //     email,
-  //   //     password,
-  //   //   });
-  //   //   const { token, user } = response.data;
-  //   //   localStorage.setItem("jwtToken", token);
-  //   //   setUser(user);
-  //   // } catch (error) {
-  //   //   console.error("Login failed:", error);
-  //   //   throw error;
-  //   // }
-
-  //   //dummy
-  //   const user = { id: 1, name: "John Doe", email: "x@x.sk" };
-  //   setUser(user);
-  //   localStorage.setItem("jwtToken", "dummy");
-  //   document.cookie = `jwtToken=${"dummy"}; path=/; max-age=3600; secure; SameSite=None`;
-  // };
-
   const login = async (username: string, password: string) => {
     fetch(apiUrl + "login", {
       method: "POST",

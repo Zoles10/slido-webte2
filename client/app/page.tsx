@@ -6,9 +6,8 @@ import Search from "@/components/search";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center  space-y-10">
+    <main className="flex min-h-screen flex-col items-center justify-center  ">
       <div className="absolute top-2  right-2 flex flex-row gap-1  items-center">
-        <Label>Nie ste prihlásený</Label>
         <LoginButton />
         <ModeToggle />
       </div>

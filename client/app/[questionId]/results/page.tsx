@@ -1,5 +1,4 @@
-"use client";
-import React from 'react';
+import React from "react";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -10,23 +9,23 @@ import WorldCloud from "@/components/ui/word-cloud";
 import WordCloud from "@/components/ui/word-cloud";
 import ResultsView from "./results-view";
 import { Loader2 } from "lucide-react";
+import { apiUrl } from "@/utils/config";
 
 async function getDataQuestion(questionId: any) {
-  const response = await fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question/${questionId}`);
+  const response = await fetch(apiUrl + "question/" + questionId);
   if (!response.ok) {
-    throw new Error('Failed to fetch');
+    throw new Error("Failed to fetch");
   }
   return response.json();
 }
 
 async function getAnswers(questionId: any) {
-  return fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/answer/${questionId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch question');
-      }
-      return response.json();
-    })
+  return fetch(apiUrl + "answer/" + questionId).then((response) => {
+    if (!response.ok) {
+      throw new Error("Failed to fetch question");
+    }
+    return response.json();
+  });
 }
 
 export default async function ResultsPage({
@@ -46,16 +45,15 @@ export default async function ResultsPage({
     data = await getAnswers(params.questionId);
     console.log("Data answers: ", data);
     answerList = data;
-    console.log('Answer List:', answerList);
+    console.log("Answer List:", answerList);
 
     apiData = await getDataQuestion(params.questionId);
-
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error("Error fetching data:", error);
   }
 
   const showCloud = searchParams.cloud;
-  console.log('Show Cloud:', showCloud);
+  console.log("Show Cloud:", showCloud);
 
   return (
     <div>

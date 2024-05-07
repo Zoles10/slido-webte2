@@ -1,7 +1,5 @@
-// "use client" ensures that the component will be compiled and executed only in the browser.
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/router";
+import React, { useState, useEffect } from "react";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -10,8 +8,9 @@ import { Paragraph, TypographyH2 } from "@/components/ui/typography/typography";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/utils/config";
+import { useRouter } from "next/navigation";
 
-function getAnswer(questionId: any) {
+function getAnswer(questionId: string) {
   return fetch(apiUrl + "answer/" + questionId).then((response) => {
     if (!response.ok) {
       throw new Error("Failed to fetch question");
@@ -20,53 +19,66 @@ function getAnswer(questionId: any) {
   });
 }
 
-async function getDataQuestion(questionId: any) {
-  const response = await fetch(apiUrl + "question/" + questionId);
-  if (!response.ok) {
-    throw new Error("Failed to fetch");
-  }
-  return response.json();
-}
-
-async function postAnswer(questionId: any, answer: string) {
-  const data = await getAnswer(questionId);
-  const user = data.user_id;
-  return fetch(apiUrl + "answer/" + questionId, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ answer_string: answer, code: questionId }),
-  }).then((response) => {
+function getDataQuestion(questionId: string) {
+  return fetch(apiUrl + "question/" + questionId).then((response) => {
     if (!response.ok) {
-      throw new Error("Failed to post answer");
+      throw new Error("Failed to fetch");
     }
     return response.json();
   });
 }
 
-export default async function Page({
-  params,
-}: {
-  params: { questionId: string };
-}) {
+function postAnswer(questionId: string, answer: string) {
+  return getAnswer(questionId).then((data) => {
+    const user = data.user_id;
+    return fetch(apiUrl + "answer/" + questionId, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ answer_string: answer, code: questionId }),
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to post answer");
+      }
+      return response.json();
+    });
+  });
+}
+
+export default function Page({ params }) {
+  const router = useRouter();
   const [answer, setAnswer] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const data = await getDataQuestion(params.questionId);
+  const [question, setQuestion] = useState("");
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
+  useEffect(() => {
+    setLoading(true);
+    getDataQuestion(params.questionId)
+      .then((data) => {
+        setQuestion(data.question_string);
+        setLoading(false);
+      })
+      .catch((error) => {
+        setError("Failed to load the question. Please try again.");
+        setLoading(false);
+      });
+  }, [params.questionId]);
+
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     setLoading(true);
     postAnswer(params.questionId, answer)
       .then((apiResponse) => {
         console.log("Response:", apiResponse);
+        router.push(`/${params.questionId}/results`);
+
+        setLoading(false);
       })
       .catch((error) => {
-        console.error("Error posting answer:", error);
+        console.error("Error posting answer:", error.message);
         setError("Failed to submit answer. Please try again.");
-      })
-      .finally(() => {
         setLoading(false);
       });
   };
@@ -81,7 +93,7 @@ export default async function Page({
         </div>
       </header>
       <main className="flex flex-col p-2 items-center">
-        <TypographyH2>{data.question_string}</TypographyH2>
+        <TypographyH2>{question}</TypographyH2>
         <form onSubmit={handleSubmit}>
           <Input
             type="text"
