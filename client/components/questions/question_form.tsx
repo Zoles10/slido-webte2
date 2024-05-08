@@ -16,6 +16,8 @@ import { Select } from "@/components/ui/select";
 import { useAuth } from "@/components/auth/auth_provider";
 import { apiUrl } from "@/utils/config";
 import { useEffect } from "react";
+import { useState } from "react";
+import { useFieldArray } from "react-hook-form";
 
 const questionFormSchema = z.object({
   question_string: z
@@ -29,7 +31,6 @@ const questionFormSchema = z.object({
 
 export default function QuestionForm() {
   const { user, isAuthenticated } = useAuth();
-
   const form = useForm({
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
@@ -41,42 +42,79 @@ export default function QuestionForm() {
     },
   });
 
-  const onSubmit = (values: any) => {
-    console.log("user", user);
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "options",
+  });
+
+  useEffect(() => {
+    console.log("fields", fields);
+  }, [fields]);
+
+  const onSubmit = async (values) => {
+    console.log("User:", user);
     const token = localStorage.getItem("token");
-    console.log("values", values);
-    fetch(apiUrl + "question", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(values),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          return response.text().then((text) => {
-            throw new Error(
-              `Server responded with status ${response.status}: ${text}`
-            );
-          });
-        }
-        return response.json(); // Assume JSON if the response was okay
-      })
-      .then((data) => {
-        if (data.message) {
-          console.log("Question added:", data);
-        } else {
-          throw new Error(data.error || "Failed to post question");
-        }
-      })
-      .catch((error) => {
-        console.error("Submission error:", error);
-        form.setError("root", {
-          type: "manual",
-          message: error.message || "Failed to submit question",
-        });
+    console.log("Form Values:", values);
+
+    try {
+      const questionResponse = await fetch(apiUrl + "question", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(values),
       });
+
+      const questionData = await questionResponse.json();
+      if (!questionResponse.ok) {
+        throw new Error(
+          `Server responded with status ${questionResponse.status}: ${
+            questionData.error || "Failed to post question"
+          }`
+        );
+      }
+
+      console.log("Question added:", questionData);
+
+      // Check if the question type is multiple_choice and post options
+      if (values.question_type === "multiple_choice" && questionData.code) {
+        await Promise.all(
+          fields.map(async (option) => {
+            const optionResponse = await fetch(
+              `${apiUrl}questionOption/${questionData.code}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  option_string: option.option,
+                  correct: option.isCorrect,
+                }),
+              }
+            );
+
+            const optionData = await optionResponse.json();
+            if (!optionResponse.ok) {
+              throw new Error(
+                `Server responded with status ${optionResponse.status}: ${
+                  optionData.error || "Failed to post question option"
+                }`
+              );
+            }
+            console.log("Option added:", optionData);
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      form.setError("root", {
+        type: "manual",
+        message: error.message || "Failed to submit question",
+      });
+    }
   };
 
   return (
@@ -112,6 +150,33 @@ export default function QuestionForm() {
             </FormItem>
           )}
         />
+        {form.watch("question_type") === "multiple_choice" &&
+          fields.map((field, index) => (
+            <div key={field.id} className="flex items-center space-x-2">
+              <Input
+                {...form.register(`options.${index}.option`)}
+                placeholder="Option"
+              />
+              <input
+                type="checkbox"
+                {...form.register(`options.${index}.isCorrect`, {
+                  valueAsBoolean: true,
+                })}
+              />
+              <Button type="button" onClick={() => remove(index)}>
+                Remove
+              </Button>
+            </div>
+          ))}
+        {form.watch("question_type") === "multiple_choice" && (
+          <Button
+            type="button"
+            onClick={() => append({ option: "", isCorrect: false })}
+          >
+            Add Option
+          </Button>
+        )}
+
         <FormField
           control={form.control}
           name="topic"

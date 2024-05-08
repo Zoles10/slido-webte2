@@ -9,6 +9,20 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
+import internal from "stream";
+
+type QuestionOption = {
+  question_option_id: number;
+  question_id: number;
+  option_string: string;
+  correct: boolean;
+};
+
+type QuestionData = {
+  question_string: string;
+  question_type: string;
+  question_id: number;
+};
 
 function getAnswer(questionId: string) {
   return fetch(apiUrl + "answer/" + questionId).then((response) => {
@@ -26,6 +40,17 @@ function getDataQuestion(questionId: string) {
     }
     return response.json();
   });
+}
+
+function getQuestionOptions(questionId: string) {
+  return fetch(apiUrl + "question/" + questionId + "/options").then(
+    (response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch question options");
+      }
+      return response.json();
+    }
+  );
 }
 
 function postAnswer(questionId: string, answer: string) {
@@ -46,18 +71,53 @@ function postAnswer(questionId: string, answer: string) {
   });
 }
 
-export default function Page({ params }) {
+export default function Page({ params }: any) {
   const router = useRouter();
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState<string>("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState("");
+  const [data, setData] = useState<QuestionData | null>(null);
+  const [options, setOptions] = useState<QuestionOption[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+
+  const handleCheckboxChange = (optionString: string, isChecked: boolean) => {
+    setLoading(true);
+    let newSelectedOptions = [...selectedOptions];
+    if (isChecked) {
+      newSelectedOptions = [...newSelectedOptions, optionString];
+    } else {
+      newSelectedOptions = newSelectedOptions.filter(
+        (opt) => opt !== optionString
+      );
+    }
+    setSelectedOptions(newSelectedOptions);
+    setAnswer(newSelectedOptions.join(";"));
+    console.log("Selected options:", answer);
+    setLoading(false);
+  };
 
   useEffect(() => {
     setLoading(true);
     getDataQuestion(params.questionId)
       .then((data) => {
+        console.log("Data:", data);
+        setData(data);
         setQuestion(data.question_string);
+        if (data.question_type === "multiple_choice") {
+          getQuestionOptions(data.question_id)
+            .then((options) => {
+              console.log("Options:", options);
+              setOptions(options);
+              setLoading(false);
+            })
+            .catch((error) => {
+              setError(
+                "Failed to load the question options. Please try again."
+              );
+              setLoading(false);
+            });
+        }
         setLoading(false);
       })
       .catch((error) => {
@@ -95,13 +155,31 @@ export default function Page({ params }) {
       <main className="flex flex-col p-2 items-center">
         <TypographyH2>{question}</TypographyH2>
         <form onSubmit={handleSubmit}>
-          <Input
-            type="text"
-            placeholder="Answer"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            disabled={loading}
-          />
+          {data?.question_type === "open" && (
+            <Input
+              type="text"
+              placeholder="Answer"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              disabled={loading}
+            />
+          )}
+          {data?.question_type === "multiple_choice" &&
+            options.map((option) => (
+              <div key={option.question_option_id}>
+                <input
+                  type="checkbox"
+                  id={String(option.question_option_id)}
+                  onChange={(e) =>
+                    handleCheckboxChange(option.option_string, e.target.checked)
+                  }
+                  disabled={loading}
+                />
+                <label htmlFor={String(option.question_option_id)}>
+                  {option.option_string}
+                </label>
+              </div>
+            ))}
           <Button
             type="submit"
             style={{ marginTop: "1rem", marginBottom: "1rem" }}

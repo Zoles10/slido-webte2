@@ -47,10 +47,10 @@ if ($apiPrefix !== 'api') {
 
 switch ($_SERVER["REQUEST_METHOD"]) {
   case 'POST':
-    handlePostActions($action, $firstParam, $conn);
+    handlePostActions($action, $firstParam, $secondParam, $conn);
     break;
   case 'GET':
-    handleGetActions($action, $firstParam, $conn);
+    handleGetActions($action, $firstParam, $secondParam, $conn);
     break;
   default:
     http_response_code(405);
@@ -58,7 +58,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
     break;
 }
 
-function handlePostActions($action, $firstParam, $conn)
+function handlePostActions($action, $firstParam, $secondParam, $conn)
 {
   switch ($action) {
     case 'register':
@@ -76,17 +76,27 @@ function handlePostActions($action, $firstParam, $conn)
     case 'answer':
       postAnswer($conn, $firstParam);
       break;
+    case 'questionOption':
+      if (!$firstParam) {
+        echo json_encode(['error' => 'Missing question_id']);
+        return;
+      }
+      postQuestionOption($conn, $firstParam);
+      break;
     default:
-      echo json_encode(['error' => 'Invalid action']);
+      echo json_encode(['error' => 'Invalid action', 'action' => $action]);
       break;
   }
 }
 
-function handleGetActions($action, $firstParam, $conn)
+function handleGetActions($action, $firstParam, $secondParam, $conn)
 {
   switch ($action) {
+
     case 'question':
-      if ($firstParam) {
+      if ($firstParam && $secondParam === 'options') {
+        getQuestionOptions($conn, $firstParam);
+      } else if ($firstParam) {
         getQuestionByCode($conn, $firstParam);
       } else {
         getQuestions($conn);
@@ -98,7 +108,7 @@ function handleGetActions($action, $firstParam, $conn)
       }
       break;
     default:
-      echo json_encode(['error' => 'Invalid action']);
+      echo json_encode(['error' => 'Invalid action', 'action' => $action]);
       break;
   }
 }
@@ -341,24 +351,43 @@ function postQuestion($conn)
 
 function getAnswersByCode($conn, $code)
 {
-  // Prepare the statement to select question_id using the provided code
+  // First attempt to retrieve question_id using the code
   $stmt = $conn->prepare("SELECT question_id FROM Question WHERE code = ?");
   $stmt->bind_param("s", $code);
   $stmt->execute();
   $result = $stmt->get_result();
 
-  if ($result->num_rows == 0) {
-    // No question found with the given code
-    echo json_encode(['error' => 'No question found with the provided code']);
-    $stmt->close();
-    return;
+  $question_id = 0;
+
+  if ($result->num_rows > 0) {
+    // If the question is found using the code, fetch the question_id
+    $row = $result->fetch_assoc();
+    $question_id = $row['question_id'];
+  } else {
+    // If no question is found, assume the code might be the question_id
+    // Check if the code is a numeric value which could be a question_id
+    if (is_numeric($code)) {
+      $question_id = $code;
+      // Validate whether this numeric code is a valid question_id
+      $validationStmt = $conn->prepare("SELECT 1 FROM Question WHERE question_id = ?");
+      $validationStmt->bind_param("i", $question_id);
+      $validationStmt->execute();
+      if ($validationStmt->get_result()->num_rows == 0) {
+        echo json_encode(['error' => 'No question found with the provided code']);
+        $validationStmt->close();
+        return;
+      }
+      $validationStmt->close();
+    } else {
+      echo json_encode(['error' => 'No question found with the provided code']);
+      $stmt->close();
+      return;
+    }
   }
 
-  $row = $result->fetch_assoc();
-  $question_id = $row['question_id'];
-  $stmt->close();  // Close the first statement
+  $stmt->close();  // Close the initial statement
 
-  // Prepare a new statement to select and count answers for the found question_id
+  // Now retrieve and count answers for the identified question_id
   $stmt = $conn->prepare("SELECT answer_string AS name, COUNT(*) AS amount FROM Answer WHERE question_id = ? GROUP BY answer_string");
   $stmt->bind_param("i", $question_id);
   $stmt->execute();
@@ -368,6 +397,7 @@ function getAnswersByCode($conn, $code)
   echo json_encode($answers);
   $stmt->close();
 }
+
 
 
 
@@ -531,6 +561,89 @@ function changeUsername($conn)
     echo json_encode(['message' => 'Username updated successfully']);
   } else {
     echo json_encode(['error' => "Error updating username: " . $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+function postQuestionOption($conn, $code)
+{
+  $data = json_decode(file_get_contents("php://input"), true);
+
+  // Check required fields
+  if (!isset($data['option_string']) || !isset($data['correct'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing required fields']);
+    return;
+  }
+
+  $option_string = $conn->real_escape_string($data['option_string']);
+  $question_id =  null;
+  $correct = $data['correct'];
+
+  // Validate either question_id or code must be present
+  if (!$code) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing question identifier']);
+    return;
+  }
+
+  if ($code) {
+    $stmt = $conn->prepare("SELECT question_id FROM Question WHERE code = ?");
+    $stmt->bind_param("s", $code);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows == 1) {
+      $row = $result->fetch_assoc();
+      $question_id = $row['question_id'];
+    } else {
+      http_response_code(404);
+      echo json_encode(['error' => 'No question found with the provided code']);
+      return;
+    }
+    $stmt->close();
+  }
+  if (isset($question_id)) {
+    $stmt = $conn->prepare("INSERT INTO QuestionOption (question_id, option_string, correct) VALUES (?, ?, ?)");
+    $stmt->bind_param("isi", $question_id, $option_string, $correct);
+  } else {
+    http_response_code(400);
+    echo json_encode(['error' => 'No valid question identifier provided']);
+    return;
+  }
+
+  if ($stmt->execute()) {
+    http_response_code(201);
+    echo json_encode(['message' => 'Answer posted successfully']);
+  } else {
+    http_response_code(500);
+    echo json_encode(['error' => $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+function getQuestionOptions($conn, $question_id)
+{
+  if (!$question_id) {
+    echo json_encode(['error' => 'Missing question_id parameter']);
+    return;
+  }
+
+  $stmt = $conn->prepare("SELECT * FROM QuestionOption WHERE question_id = ?");
+  $stmt->bind_param("i", $question_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  $questionOptions = [];
+  while ($row = $result->fetch_assoc()) {
+    $questionOptions[] = $row;
+  }
+
+  if (count($questionOptions) > 0) {
+    echo json_encode($questionOptions);
+  } else {
+    echo json_encode(['message' => 'No question found with the specified code', 'question_id' => $question_id]);
   }
 
   $stmt->close();
