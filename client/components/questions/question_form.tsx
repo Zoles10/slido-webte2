@@ -18,6 +18,9 @@ import { apiUrl } from "@/utils/config";
 import { useEffect } from "react";
 import { useState } from "react";
 import { useFieldArray } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { CircleCheckBig, Loader2 } from "lucide-react";
 
 const questionFormSchema = z.object({
   question_string: z
@@ -31,6 +34,7 @@ const questionFormSchema = z.object({
 
 export default function QuestionForm() {
   const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
   const form = useForm({
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
@@ -76,8 +80,12 @@ export default function QuestionForm() {
       }
 
       console.log("Question added:", questionData);
+      toast("Otázka pridaná", {
+        description: "Otázka bola úspešne pridaná do databázy.",
+        important: true,
+        icon: <CircleCheckBig className="text-destructive" />,
+      });
 
-      // Check if the question type is multiple_choice and post options
       if (values.question_type === "multiple_choice" && questionData.code) {
         await Promise.all(
           fields.map(async (option) => {
@@ -104,9 +112,12 @@ export default function QuestionForm() {
                 }`
               );
             }
+            router.push(`/${questionData.code}/dashboard`);
             console.log("Option added:", optionData);
           })
         );
+      } else {
+        router.push(`/${questionData.code}/dashboard`);
       }
     } catch (error) {
       console.error("Submission error:", error);
@@ -125,7 +136,7 @@ export default function QuestionForm() {
           name="question_string"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Question</FormLabel>
+              <FormLabel>Otázka</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -138,12 +149,12 @@ export default function QuestionForm() {
           name="question_type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Type</FormLabel>
+              <FormLabel>Typ</FormLabel>
               <FormControl>
                 <Select {...field}>
-                  <option value="">Select Type</option>
-                  <option value="multiple_choice">Multiple Choice</option>
-                  <option value="open_end">Open End</option>
+                  <option value="">Vyberte typ</option>
+                  <option value="multiple_choice">Výber možností</option>
+                  <option value="open_end">Otvorená otázka</option>
                 </Select>
               </FormControl>
               <FormMessage />
@@ -164,7 +175,7 @@ export default function QuestionForm() {
                 })}
               />
               <Button type="button" onClick={() => remove(index)}>
-                Remove
+                Odstrániť
               </Button>
             </div>
           ))}
@@ -173,7 +184,7 @@ export default function QuestionForm() {
             type="button"
             onClick={() => append({ option: "", isCorrect: false })}
           >
-            Add Option
+            Pridať možnosť
           </Button>
         )}
 
@@ -182,7 +193,7 @@ export default function QuestionForm() {
           name="topic"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Topic</FormLabel>
+              <FormLabel>Predmet</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -191,7 +202,7 @@ export default function QuestionForm() {
           )}
         />
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          Submit Question
+          Pridať otázku
         </Button>
       </form>
     </Form>

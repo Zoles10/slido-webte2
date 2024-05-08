@@ -4,6 +4,7 @@ import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
 import QuestionTable from "@/components/ui/questionsTable";
 import QuestionsSwitch from "@/components/ui/questionsSwitch";
+import Link from "next/link";
 
 export type Question = {
   question_string: any;
@@ -33,10 +34,13 @@ export default async function MyQuestions({
         <div className="w-full max-w-2xl p-8 shadow-lg rounded-lg">
           <QuestionsSwitch all={searchParams.all == "true"} />
 
-          <h1 className="text-2xl font-bold text-center">My questions</h1>
-          <QuestionTable
-            all={searchParams.all == "true"}
-          />
+          <h1 className="text-2xl font-bold text-center">Moje otázky</h1>
+          <QuestionTable all={searchParams.all == "true"} />
+          <div className="mt-4 text-center">
+            <Link href="/home" legacyBehavior>
+              <a className="text-orange-500 hover:underline">Domov</a>
+            </Link>
+          </div>
         </div>
       </main>
     </>

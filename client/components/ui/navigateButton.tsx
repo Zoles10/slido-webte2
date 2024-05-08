@@ -15,7 +15,7 @@ export default function NavigateButton() {
         handleLogout();
       }}
     >
-      Create Question
+      Vytvoriť otázku
     </Button>
   );
 }

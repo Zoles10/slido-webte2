@@ -17,10 +17,10 @@ export default function Home() {
       <header className="flex justify-between items-center w-full p-2">
         <Logo />
         <div className="flex space-x-4">
-          <LogoutButton />
           <ModeToggle />
           <NavigateButton />
           <NavigateMyQuestions />
+          <LogoutButton />
         </div>
       </header>
       <main className="flex min-h-screen flex-col items-center justify-center  space-y-10">
