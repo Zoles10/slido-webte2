@@ -53,24 +53,24 @@ export default function RegisterForm() {
   });
   const router = useRouter();
 
-  // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
     console.log(values);
-
-    const formData = new FormData();
-    formData.append("username", values.email); // Assuming you use the email as the username
-    formData.append("password", values.password);
     fetch(apiUrl + "register", {
       method: "POST",
-      body: formData, // Sending as FormData to match PHP's $_POST handling
+      headers: {
+        "Content-Type": "application/json", // Setting the content type to JSON
+      },
+      body: JSON.stringify({
+        username: values.email,
+        password: values.password,
+        name: values.name,
+        lastname: values.last_name, // Ensure this field is 'lastname' if that is what the backend expects
+      }),
     })
-      .then((response) => response.text()) // Assuming the response is text, not JSON
+      .then((response) => response.json()) // Assuming the server responds with JSON
       .then((data) => {
         console.log(data);
-        router.push("/");  // Log the success or error message from the server
-        // Here you can handle redirection to login or further actions
+        router.push("/"); // Navigate after successful registration
       })
       .catch((error) => {
         console.error("Error:", error);

@@ -30,7 +30,7 @@ import { Separator } from "../ui/separator";
 import { apiUrl } from "@/utils/config";
 
 const formSchema = z.object({
-  username: z.string().min(2, {
+  email: z.string().min(2, {
     message: "Username must be at least 2 characters.",
   }),
   password: z.string(),
@@ -43,12 +43,12 @@ export default function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    login(values.username, values.password);
+    login(values.email, values.password);
     if (isAuthenticated) {
       console.log("logged in");
       router.push("/home");
@@ -70,7 +70,7 @@ export default function LoginForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
