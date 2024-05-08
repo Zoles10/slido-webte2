@@ -71,7 +71,7 @@ function postAnswer(questionId: string, answer: string) {
   });
 }
 
-export default function Page({ params } : { params: { questionId: string } }) {
+export default function Page({ params }: { params: { questionId: string } }) {
   const router = useRouter();
   const [answer, setAnswer] = useState<string>("");
   const [error, setError] = useState("");
@@ -155,7 +155,7 @@ export default function Page({ params } : { params: { questionId: string } }) {
       <main className="flex flex-col p-2 items-center">
         <TypographyH2>{question}</TypographyH2>
         <form onSubmit={handleSubmit}>
-          {data?.question_type === "open" && (
+          {data?.question_type === "open_end" && (
             <Input
               type="text"
               placeholder="Answer"
