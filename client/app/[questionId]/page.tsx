@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
+import LanguageSwitcher from "@/components/ui/languageSwitcher";
 
 type QuestionOption = {
   question_option_id: number;
@@ -147,8 +148,9 @@ export default function Page({ params }: { params: { questionId: string } }) {
       <header className="flex justify-between items-center w-full p-2">
         <Logo />
         <div className="flex space-x-4">
-          <LogoutButton />
+          <LanguageSwitcher />
           <ModeToggle />
+          <LogoutButton />
         </div>
       </header>
       <main className="flex flex-col p-2 items-center">

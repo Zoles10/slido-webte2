@@ -7,6 +7,7 @@ import QuestionTable from "@/components/ui/questionsTable";
 import QuestionsSwitch from "@/components/ui/questionsSwitch";
 import Link from "next/link";
 import { FormattedMessage } from "react-intl";
+import LanguageSwitcher from "@/components/ui/languageSwitcher";
 
 export type Question = {
   question_string: any;
@@ -28,8 +29,9 @@ export default async function MyQuestions({
       <header className="flex justify-between items-center w-full p-2">
         <Logo />
         <div className="flex space-x-4">
-          <LogoutButton />
+          <LanguageSwitcher />
           <ModeToggle />
+          <LogoutButton />
         </div>
       </header>
       <main className="flex min-h-screen flex-col items-center justify-center p-24 ">

@@ -8,6 +8,7 @@ import ResultsView from "./results-view";
 import { Loader2 } from "lucide-react";
 import { apiUrl } from "@/utils/config";
 import Link from "next/link";
+import LanguageSwitcher from "@/components/ui/languageSwitcher";
 
 async function getDataQuestion(questionId: string) {
   const response = await fetch(apiUrl + "question/" + questionId);
@@ -77,8 +78,9 @@ export default function ResultsPage({
       <header className="flex justify-between items-center w-full p-2">
         <Logo />
         <div className="flex space-x-4">
-          <LogoutButton />
+          <LanguageSwitcher />
           <ModeToggle />
+          <LogoutButton />
         </div>
       </header>
       <main className="flex flex-col p-2 items-center">

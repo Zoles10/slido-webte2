@@ -6,6 +6,7 @@ import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
 import { FormattedMessage } from "react-intl";
+import LanguageSwitcher from "@/components/ui/languageSwitcher";
 
 export default function CreateQuestion() {
   return (
@@ -13,8 +14,9 @@ export default function CreateQuestion() {
       <header className="flex justify-between items-center w-full p-2">
         <Logo />
         <div className="flex space-x-4">
-          <LogoutButton />
+          <LanguageSwitcher />
           <ModeToggle />
+          <LogoutButton />
         </div>
       </header>
       <main className="flex min-h-screen flex-col items-center justify-center p-24 ">
