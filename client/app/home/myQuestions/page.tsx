@@ -13,15 +13,6 @@ export type Question = {
   question_id: any;
   code: any;
 };
-
-async function fetchQuestions(): Promise<Question[]> {
-  const response = await fetch(
-    "https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question"
-  );
-  const data = await response.json();
-  return data;
-}
-
 export default async function MyQuestions({
   searchParams,
 }: {
@@ -29,9 +20,6 @@ export default async function MyQuestions({
     all: string;
   };
 }) {
-  const questions = await fetchQuestions();
-  console.log(searchParams.all);
-
   return (
     <>
       <header className="flex justify-between items-center w-full p-2">
@@ -47,7 +35,6 @@ export default async function MyQuestions({
 
           <h1 className="text-2xl font-bold text-center">My questions</h1>
           <QuestionTable
-            questions={questions}
             all={searchParams.all == "true"}
           />
         </div>
