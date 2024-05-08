@@ -116,22 +116,33 @@ function handleGetActions($action, $firstParam, $secondParam, $conn)
 
 function registerUser($conn)
 {
-  if (!isset($_POST['username']) || !isset($_POST['password'])) {
-    echo json_encode(['error' => 'Missing username or password']);
+  $inputJSON = file_get_contents('php://input');
+  $input = json_decode($inputJSON, TRUE); // convert JSON into array
+
+  // Check for required fields
+  if (!isset($input['username']) || !isset($input['password']) || !isset($input['name']) || !isset($input['lastname'])) {
+    echo json_encode(['error' => 'Missing fields', 'input' => $input]);
     exit;
   }
 
-  $email = $conn->real_escape_string($_POST['username']);
-  $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-  $stmt = $conn->prepare("INSERT INTO User (email, password) VALUES (?, ?)");
-  $stmt->bind_param("ss", $email, $password);
+  // Sanitize and hash data
+  $email = $conn->real_escape_string($input['username']);
+  $password = password_hash($input['password'], PASSWORD_DEFAULT);
+  $name = $conn->real_escape_string($input['name']);
+  $lastname = $conn->real_escape_string($input['lastname']);
 
+  // Prepare the SQL statement
+  $stmt = $conn->prepare("INSERT INTO User (email, password, name, lastname) VALUES (?, ?, ?, ?)");
+  $stmt->bind_param("ssss", $email, $password, $name, $lastname);
+
+  // Execute the statement and handle the result
   if ($stmt->execute()) {
-    echo json_encode(['message' => 'New record created successfully']);
+    echo json_encode(['message' => 'New user registered successfully']);
   } else {
     echo json_encode(['error' => "Error: " . $stmt->error]);
   }
 
+  // Close the statement
   $stmt->close();
 }
 
@@ -175,17 +186,15 @@ function loginUser($conn)
 {
   $inputJSON = file_get_contents('php://input');
   $input = json_decode($inputJSON, TRUE);
-
-  if (!isset($input['username']) || !isset($input['password'])) {
+  if (!isset($input['email']) || !isset($input['password'])) {
     echo json_encode(['error' => 'Missing email or password', 'input' => $input]);
     exit;
   }
 
-  $email = $conn->real_escape_string($input['username']);
+
+  $email = $conn->real_escape_string($input['email']);
   $password = $input['password'];
-
-
-  $stmt = $conn->prepare("SELECT user_id, password FROM User WHERE email = ?");
+  $stmt = $conn->prepare("SELECT user_id,name, lastname, password FROM User WHERE email = ?");
   $stmt->bind_param("s", $email);
   $stmt->execute();
   $result = $stmt->get_result();
@@ -194,11 +203,13 @@ function loginUser($conn)
     $row = $result->fetch_assoc();
     $hashed_password = $row['password'];
     $user_id = $row['user_id'];
+    $name = $row['name'];
+    $lastname = $row['lastname'];
 
     if (password_verify($password, $hashed_password)) {
       $jwt = issueJwt($user_id, $email);
       $refreshToken = issueRefreshToken($conn, $user_id);
-      echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken, 'user_id' => $user_id, 'email' => $email, 'expires_at' => date('Y-m-d H:i:s', strtotime('+7 days')), 'issued_at' => date('Y-m-d H:i:s')]);
+      echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken, 'user_id' => $user_id, 'email' => $email, 'expires_at' => date('Y-m-d H:i:s', strtotime('+7 days')), 'issued_at' => date('Y-m-d H:i:s'), 'name' => $name, 'lastname' => $lastname]);
     } else {
       echo json_encode(['error' => 'Invalid password']);
     }
