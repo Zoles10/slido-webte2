@@ -309,6 +309,18 @@ function getQuestions($conn)
   echo json_encode($questions);
 }
 
+function getUsers($conn)
+{
+    $result = $conn->query("SELECT user_id, email, name, lastname, created_at, role FROM Users WHERE role = 'user'");
+
+    $users = [];
+    while ($row = $result->fetch_assoc()) {
+        $users[] = $row;
+    }
+    echo json_encode($users);
+}
+
+
 function generateUniqueCode($conn)
 {
   $code = '';
