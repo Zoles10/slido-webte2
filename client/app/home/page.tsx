@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import NavigateButton from "@/components/ui/navigateButton";
 import { Label } from "@/components/ui/label";
 import Search from "@/components/search";
+import NavigateMyQuestions from "@/components/ui/navigateMyQuestions";
 
 export default function Home() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function Home() {
           <LogoutButton />
           <ModeToggle />
           <NavigateButton />
+          <NavigateMyQuestions />
         </div>
       </header>
       <main className="flex min-h-screen flex-col items-center justify-center  space-y-10">

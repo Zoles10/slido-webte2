@@ -71,7 +71,7 @@ function postAnswer(questionId: string, answer: string) {
   });
 }
 
-export default function Page({ params }: any) {
+export default function Page({ params } : { params: { questionId: string } }) {
   const router = useRouter();
   const [answer, setAnswer] = useState<string>("");
   const [error, setError] = useState("");
