@@ -107,6 +107,9 @@ function handleGetActions($action, $firstParam, $secondParam, $conn)
         getAnswersByCode($conn, $firstParam);
       }
       break;
+    case 'users':
+      getUsers($conn);
+      break;
     default:
       echo json_encode(['error' => 'Invalid action', 'action' => $action]);
       break;
