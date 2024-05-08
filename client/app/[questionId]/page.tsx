@@ -192,6 +192,11 @@ export default function Page({ params } : { params: { questionId: string } }) {
         <Link href={`/${params.questionId}/results`}>
           <Button>Go to results</Button>
         </Link>
+        <div className="mt-4 text-center">
+          <Link href="/home" legacyBehavior>
+            <a className="text-orange-500 hover:underline">Return to home</a>
+          </Link>
+        </div>
       </main>
     </div>
   );

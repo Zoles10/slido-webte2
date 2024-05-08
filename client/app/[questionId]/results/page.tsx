@@ -7,8 +7,9 @@ import { Paragraph, TypographyH2 } from "@/components/ui/typography/typography";
 import ResultsView from "./results-view";
 import { Loader2 } from "lucide-react";
 import { apiUrl } from "@/utils/config";
+import Link from "next/link";
 
-async function getDataQuestion(questionId) {
+async function getDataQuestion(questionId: string) {
   const response = await fetch(apiUrl + "question/" + questionId);
   if (!response.ok) {
     throw new Error("Failed to fetch");
@@ -16,7 +17,7 @@ async function getDataQuestion(questionId) {
   return response.json();
 }
 
-async function getAnswers(questionId) {
+async function getAnswers(questionId: string) {
   return fetch(apiUrl + "answer/" + questionId).then((response) => {
     if (!response.ok) {
       throw new Error("Failed to fetch answers");
@@ -25,7 +26,13 @@ async function getAnswers(questionId) {
   });
 }
 
-export default function ResultsPage({ params, searchParams }) {
+export default function ResultsPage({
+  params,
+  searchParams,
+}: {
+  params: { questionId: string };
+  searchParams: URLSearchParams;
+}) {
   const [apiData, setApiData] = useState(null);
   const [answerList, setAnswerList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +46,8 @@ export default function ResultsPage({ params, searchParams }) {
         setApiData(apiData);
         if (apiData.question_type === "multiple_choice") {
           const answerCounts = new Map();
-          data.forEach((item) => {
-            item.name.split(";").forEach((answer) => {
+          data.forEach((item: any) => {
+            item.name.split(";").forEach((answer: any) => {
               answerCounts.set(answer, (answerCounts.get(answer) || 0) + 1);
             });
           });
@@ -83,6 +90,11 @@ export default function ResultsPage({ params, searchParams }) {
         ) : (
           <Loader2 className="animate-spin" />
         )}
+        <div className="mt-4 text-center">
+          <Link href="/home" legacyBehavior>
+            <a className="text-orange-500 hover:underline">Return to home</a>
+          </Link>
+        </div>
       </main>
     </div>
   );

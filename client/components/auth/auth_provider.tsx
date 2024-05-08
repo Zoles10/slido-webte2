@@ -8,6 +8,8 @@ import { useEffect } from "react";
 type User = {
   id: number;
   email: string;
+  name?: string;
+  lastname?: string;
 };
 
 type AuthContextType = {
@@ -28,13 +30,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  const login = async (username: string, password: string) => {
+  const login = async (email: string, password: string) => {
     fetch(apiUrl + "login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username: username, password: password }),
+      body: JSON.stringify({ email: email, password: password }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -46,6 +48,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const userData: User = {
             id: data.user_id,
             email: data.email,
+            name: data.name,
+            lastname: data.lastname,
           };
           setUser(userData);
           setIsAuthenticated(true);

@@ -23,8 +23,8 @@ export default function CreateQuestion() {
           <Paragraph>Fill out the form below to post a new question.</Paragraph>
           <QuestionForm />
           <div className="mt-4 text-center">
-            <Link href="/" legacyBehavior>
-              <a className="text-blue-500 hover:underline">Return to home</a>
+            <Link href="/home" legacyBehavior>
+              <a className="text-orange-500 hover:underline">Return to home</a>
             </Link>
           </div>
         </div>
