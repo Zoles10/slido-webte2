@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  i18n: {
+    locales: ["en", "sk"],
+    defaultLocale: "sk",
+  },
   // async redirects() {
   //   return [
   //     {

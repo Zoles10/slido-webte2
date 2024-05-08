@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth/auth_provider";
 import { Toaster } from "@/components/ui/sonner";
+import { LanguageProvider } from "@/components/languages/LanguageProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,8 +28,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="absolute top-2 right-2"></div>
-            {children}
+            <LanguageProvider>
+              <div className="absolute top-2 right-2"></div>
+              {children}
+            </LanguageProvider>
             <Toaster />
           </AuthProvider>
         </ThemeProvider>

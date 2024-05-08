@@ -28,6 +28,8 @@ import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
 import { Separator } from "../ui/separator";
 import { apiUrl } from "@/utils/config";
+import { useIntl } from "react-intl";
+import { FormattedMessage } from "react-intl";
 
 const formSchema = z.object({
   email: z.string().min(2, {
@@ -38,6 +40,7 @@ const formSchema = z.object({
 
 export default function LoginForm() {
   const { login, isAuthenticated } = useAuth();
+  const intl = useIntl();
   const router = useRouter();
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -58,7 +61,9 @@ export default function LoginForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Prihlásenie</CardTitle>
+        <CardTitle>
+          <FormattedMessage id="login" defaultMessage="Prihlásenie" />
+        </CardTitle>
         <CardDescription className="text-destructive">
           {form.formState.errors.root
             ? form.formState.errors.root?.message
@@ -86,7 +91,9 @@ export default function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Heslo</FormLabel>
+                  <FormLabel>
+                    <FormattedMessage id="password" defaultMessage="Heslo" />
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="shadcn" type="password" {...field} />
                   </FormControl>
@@ -104,18 +111,32 @@ export default function LoginForm() {
               {form.formState.isSubmitting && (
                 <Loader2 className="w-6 h-6 mr-2 animate-spin" />
               )}
-              Prihlásiť
+              <FormattedMessage
+                id="loginButton"
+                defaultMessage="Prihlásiť sa"
+              />
             </Button>
           </form>
         </Form>
         <Separator className="my-4" />
         <div className="mt-1"></div>
         <Link href="/password">
-          <Paragraph>Zabudli ste heslo?</Paragraph>
+          <Paragraph>
+            <FormattedMessage
+              id="forgotPassword"
+              defaultMessage="Zabudnuté heslo"
+            />
+          </Paragraph>
         </Link>
         <Link href="/register">
           <Paragraph>
-            Nemáte účet? <span className="text-primary">Zaregistrujte sa</span>
+            <FormattedMessage
+              id="dontHaveAnAccount"
+              defaultMessage="Nemáte účet?"
+            />
+            <span className="text-primary">
+              <FormattedMessage id="signUp" defaultMessage="Zaregistrovať sa" />
+            </span>
           </Paragraph>
         </Link>
       </CardContent>

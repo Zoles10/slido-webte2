@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "../auth/auth_provider";
 import { apiUrl } from "@/utils/config";
+import { FormattedMessage } from "react-intl";
 
 interface User {
   user_id: number;
@@ -46,17 +47,16 @@ const UsersTable: React.FC<UsersTableProps> = ({ all }) => {
     const loadUsers = async () => {
       const fetchedUsers = await fetchUsers();
       setUsers(fetchedUsers);
-      console.log('Users ' ,fetchedUsers);
+      console.log("Users ", fetchedUsers);
     };
 
     loadUsers();
-  }, [all]); 
+  }, [all]);
 
   console.log(users);
 
-
   useEffect(() => {
-    console.log('Filtered users', users);
+    console.log("Filtered users", users);
   }, [users]);
 
   return (
@@ -64,10 +64,17 @@ const UsersTable: React.FC<UsersTableProps> = ({ all }) => {
       <TableHeader>
         <TableRow>
           <TableHead>ID</TableHead>
-          <TableHead>Meno</TableHead>
-          <TableHead>Priezvisko</TableHead>
+          <TableHead>
+            <FormattedMessage id="name" />
+          </TableHead>
+          <TableHead>
+            <FormattedMessage id="lastName" />
+          </TableHead>
           <TableHead>Email</TableHead>
-          <TableHead>Vytvorenie účtu</TableHead>
+          <TableHead>
+            {" "}
+            <FormattedMessage id="dateOfCreation" />
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -78,7 +85,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ all }) => {
               <TableCell>{user.name}</TableCell>
               <TableCell>{user.lastname}</TableCell>
               <TableCell>{user.email}</TableCell>
-              <TableCell>{new Date(user.created_at).toLocaleString()}</TableCell>
+              <TableCell>
+                {new Date(user.created_at).toLocaleString()}
+              </TableCell>
             </TableRow>
           ))
         ) : (

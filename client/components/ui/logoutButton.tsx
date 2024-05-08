@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/auth_provider";
 import { Button } from "./button";
+import { FormattedMessage } from "react-intl";
 
 export default function LogoutButton() {
   const { logout } = useAuth();
@@ -18,7 +19,7 @@ export default function LogoutButton() {
         handleLogout();
       }}
     >
-      Odhlásiť sa
+      <FormattedMessage id="logout" defaultMessage="Odhlásiť sa" />
     </Button>
   );
 }

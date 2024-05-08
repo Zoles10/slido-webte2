@@ -12,6 +12,7 @@ import {
 import { Question } from "@/app/home/myQuestions/page";
 import { useAuth } from "../auth/auth_provider";
 import { apiUrl } from "@/utils/config";
+import { FormattedMessage } from "react-intl";
 
 interface QuestionTableProps {
   all: boolean;
@@ -56,10 +57,18 @@ const QuestionTable: React.FC<QuestionTableProps> = ({ all }) => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Otázka</TableHead>
-          <TableHead>Predmet</TableHead>
-          <TableHead>Dátum vytvorenia</TableHead>
-          <TableHead>Kód</TableHead>
+          <TableHead>
+            <FormattedMessage id="question" />
+          </TableHead>
+          <TableHead>
+            <FormattedMessage id="topic" />
+          </TableHead>
+          <TableHead>
+            <FormattedMessage id="dateOfCreation" />
+          </TableHead>
+          <TableHead>
+            <FormattedMessage id="code" />
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

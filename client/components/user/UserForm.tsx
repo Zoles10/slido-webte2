@@ -18,6 +18,7 @@ import { Separator } from "../ui/separator";
 import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
 import { apiUrl } from "@/utils/config";
+import { FormattedMessage } from "react-intl";
 
 import { useRouter } from "next/navigation";
 
@@ -84,7 +85,9 @@ export default function RegisterForm() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Meno</FormLabel>
+                  <FormLabel>
+                    <FormattedMessage id="name" />
+                  </FormLabel>
                   <FormControl>
                     <Input size={40} placeholder="shadcn" {...field} />
                   </FormControl>
@@ -97,7 +100,9 @@ export default function RegisterForm() {
               name="last_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Priezvisko</FormLabel>
+                  <FormLabel>
+                    <FormattedMessage id="lastName" />
+                  </FormLabel>
                   <FormControl>
                     <Input size={40} placeholder="shadcn" {...field} />
                   </FormControl>
@@ -123,7 +128,9 @@ export default function RegisterForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Heslo</FormLabel>
+                  <FormLabel>
+                    <FormattedMessage id="password" />
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="shadcn" type="password" {...field} />
                   </FormControl>
@@ -136,7 +143,9 @@ export default function RegisterForm() {
               name="password_confirmation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Heslo znova</FormLabel>
+                  <FormLabel>
+                    <FormattedMessage id="confirmPassword" />
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="shadcn" type="password" {...field} />
                   </FormControl>
@@ -144,7 +153,9 @@ export default function RegisterForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit">Registrovať</Button>
+            <Button type="submit">
+              <FormattedMessage id="register" />
+            </Button>
           </form>
         </Form>
       </CardContent>

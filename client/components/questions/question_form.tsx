@@ -21,6 +21,7 @@ import { useFieldArray } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CircleCheckBig, Loader2 } from "lucide-react";
+import { FormattedMessage } from "react-intl";
 
 const questionFormSchema = z.object({
   question_string: z
@@ -136,7 +137,9 @@ export default function QuestionForm() {
           name="question_string"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Otázka</FormLabel>
+              <FormLabel>
+                <FormattedMessage id="question" />
+              </FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -149,12 +152,21 @@ export default function QuestionForm() {
           name="question_type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Typ</FormLabel>
+              <FormLabel>
+                {" "}
+                <FormattedMessage id="type" />
+              </FormLabel>
               <FormControl>
                 <Select {...field}>
-                  <option value="">Vyberte typ</option>
-                  <option value="multiple_choice">Výber možností</option>
-                  <option value="open_end">Otvorená otázka</option>
+                  <option value="">
+                    <FormattedMessage id="chooseType" />
+                  </option>
+                  <option value="multiple_choice">
+                    <FormattedMessage id="multipleChoice" />
+                  </option>
+                  <option value="open_end">
+                    <FormattedMessage id="openEnded" />
+                  </option>
                 </Select>
               </FormControl>
               <FormMessage />
@@ -175,7 +187,7 @@ export default function QuestionForm() {
                 })}
               />
               <Button type="button" onClick={() => remove(index)}>
-                Odstrániť
+                <FormattedMessage id="remove" />
               </Button>
             </div>
           ))}
@@ -184,7 +196,7 @@ export default function QuestionForm() {
             type="button"
             onClick={() => append({ option: "", isCorrect: false })}
           >
-            Pridať možnosť
+            <FormattedMessage id="addOption" />
           </Button>
         )}
 
@@ -193,7 +205,10 @@ export default function QuestionForm() {
           name="topic"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Predmet</FormLabel>
+              <FormLabel>
+                {" "}
+                <FormattedMessage id="topic" />
+              </FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -202,7 +217,7 @@ export default function QuestionForm() {
           )}
         />
         <Button type="submit" disabled={form.formState.isSubmitting}>
-          Pridať otázku
+          <FormattedMessage id="addQuestion" />
         </Button>
       </form>
     </Form>

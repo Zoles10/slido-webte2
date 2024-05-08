@@ -1,9 +1,11 @@
+"use client";
 import Link from "next/link";
 import QuestionForm from "@/components/questions/question_form";
 import { Paragraph } from "@/components/ui/typography/typography";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
+import { FormattedMessage } from "react-intl";
 
 export default function CreateQuestion() {
   return (
@@ -18,16 +20,19 @@ export default function CreateQuestion() {
       <main className="flex min-h-screen flex-col items-center justify-center p-24 ">
         <div className="w-full max-w-2xl p-8 shadow-lg rounded-lg">
           <h1 className="text-2xl font-bold text-center">
-            Vytvorte novú otázku
+            <FormattedMessage id="createNewQuestion" />
           </h1>
           <Paragraph className="mb-5">
-            Vyplňte formulár a pridajte novú otázku
+            <FormattedMessage id="fillOutFormAndAddQuestion" />
           </Paragraph>
           <QuestionForm />
-          <div className="mt-4 text-center">
-            <Link href="/home" legacyBehavior>
-              <a className="text-orange-500 hover:underline">Domov</a>
-            </Link>
+          <div
+            className="mt-4 text-center text-orange-500 hover:underline  cursor-pointer"
+            onClick={() => {
+              window.location.href = "/home";
+            }}
+          >
+            <FormattedMessage id="home" />
           </div>
         </div>
       </main>
