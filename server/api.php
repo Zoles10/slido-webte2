@@ -314,7 +314,7 @@ function getQuestions($conn)
 
 function getUsers($conn)
 {
-    $result = $conn->query("SELECT user_id, email, name, lastname, created_at, role FROM Users WHERE role = 'user'");
+    $result = $conn->query("SELECT user_id, email, name, lastname, created_at, role FROM User");
 
     $users = [];
     while ($row = $result->fetch_assoc()) {

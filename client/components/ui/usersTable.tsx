@@ -46,12 +46,18 @@ const UsersTable: React.FC<UsersTableProps> = ({ all }) => {
     const loadUsers = async () => {
       const fetchedUsers = await fetchUsers();
       setUsers(fetchedUsers);
+      console.log('Users ' ,fetchedUsers);
     };
 
     loadUsers();
   }, [all]); 
 
-  const filteredUsers = all ? users : users.filter(u => u.user_id === user?.id);
+  console.log(users);
+
+
+  useEffect(() => {
+    console.log('Filtered users', users);
+  }, [users]);
 
   return (
     <Table>
@@ -65,8 +71,8 @@ const UsersTable: React.FC<UsersTableProps> = ({ all }) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {filteredUsers.length > 0 ? (
-          filteredUsers.map((user) => (
+        {users.length > 0 ? (
+          users.map((user) => (
             <TableRow key={user.user_id}>
               <TableCell>{user.user_id}</TableCell>
               <TableCell>{user.name}</TableCell>
