@@ -15,7 +15,7 @@ export default function NavigateButton() {
         handleLogout();
       }}
     >
-      My questions
+      Moje otázky
     </Button>
   );
 }

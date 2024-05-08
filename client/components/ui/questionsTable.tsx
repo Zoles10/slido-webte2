@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Question } from "@/app/home/myQuestions/page";
 import { useAuth } from "../auth/auth_provider";
+import { apiUrl } from "@/utils/config";
 
 interface QuestionTableProps {
   all: boolean;
@@ -11,7 +19,7 @@ interface QuestionTableProps {
 
 async function fetchQuestions(): Promise<Question[]> {
   try {
-    const response = await fetch("https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question");
+    const response = await fetch(apiUrl + "question");
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
@@ -34,25 +42,24 @@ const QuestionTable: React.FC<QuestionTableProps> = ({ all }) => {
     };
 
     loadQuestions();
-  }, [all]);  // This dependency might be unnecessary unless fetching depends on 'all'
+  }, [all]); // This dependency might be unnecessary unless fetching depends on 'all'
 
- 
-  const questionsListWithSpecificUser = questions.filter(question => question.user_id == user?.id);
-    let filteredQuestions = questions;
-    if (!all) {
-       filteredQuestions = questionsListWithSpecificUser;
-    }
-  
-
+  const questionsListWithSpecificUser = questions.filter(
+    (question) => question.user_id == user?.id
+  );
+  let filteredQuestions = questions;
+  if (!all) {
+    filteredQuestions = questionsListWithSpecificUser;
+  }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Question</TableHead>
-          <TableHead>Topic</TableHead>
-          <TableHead>Date Asked</TableHead>
-          <TableHead>Code</TableHead>
+          <TableHead>Otázka</TableHead>
+          <TableHead>Predmet</TableHead>
+          <TableHead>Dátum vytvorenia</TableHead>
+          <TableHead>Kód</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -61,7 +68,9 @@ const QuestionTable: React.FC<QuestionTableProps> = ({ all }) => {
             <TableRow key={question.question_id}>
               <TableCell>{question.question_string}</TableCell>
               <TableCell>{question.topic}</TableCell>
-              <TableCell>{new Date(question.created_at).toLocaleDateString()}</TableCell>
+              <TableCell>
+                {new Date(question.created_at).toLocaleDateString()}
+              </TableCell>
               <TableCell>{question.code}</TableCell>
             </TableRow>
           ))
@@ -76,4 +85,3 @@ const QuestionTable: React.FC<QuestionTableProps> = ({ all }) => {
 };
 
 export default QuestionTable;
-

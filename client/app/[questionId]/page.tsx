@@ -9,7 +9,6 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
-import internal from "stream";
 
 type QuestionOption = {
   question_option_id: number;
@@ -194,7 +193,7 @@ export default function Page({ params }: { params: { questionId: string } }) {
         </Link>
         <div className="mt-4 text-center">
           <Link href="/home" legacyBehavior>
-            <a className="text-orange-500 hover:underline">Return to home</a>
+            <a className="text-orange-500 hover:underline">Domov</a>
           </Link>
         </div>
       </main>

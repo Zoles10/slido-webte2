@@ -92,7 +92,7 @@ export default function ResultsPage({
         )}
         <div className="mt-4 text-center">
           <Link href="/home" legacyBehavior>
-            <a className="text-orange-500 hover:underline">Return to home</a>
+            <a className="text-orange-500 hover:underline">Domov</a>
           </Link>
         </div>
       </main>

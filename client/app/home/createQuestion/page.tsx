@@ -18,13 +18,15 @@ export default function CreateQuestion() {
       <main className="flex min-h-screen flex-col items-center justify-center p-24 ">
         <div className="w-full max-w-2xl p-8 shadow-lg rounded-lg">
           <h1 className="text-2xl font-bold text-center">
-            Create a New Question
+            Vytvorte novú otázku
           </h1>
-          <Paragraph>Fill out the form below to post a new question.</Paragraph>
+          <Paragraph className="mb-5">
+            Vyplňte formulár a pridajte novú otázku
+          </Paragraph>
           <QuestionForm />
           <div className="mt-4 text-center">
             <Link href="/home" legacyBehavior>
-              <a className="text-orange-500 hover:underline">Return to home</a>
+              <a className="text-orange-500 hover:underline">Domov</a>
             </Link>
           </div>
         </div>
