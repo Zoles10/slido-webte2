@@ -1,80 +1,153 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button, Input, FormMessage, FormLabel, FormControl, FormItem, Form } from "@/components/ui";
-import { useRouter } from 'next/router';
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "../ui/separator";
+import Link from "next/link";
+import { Paragraph } from "../ui/typography/typography";
 import { apiUrl } from "@/utils/config";
 
-const newUserSchema = z.object({
-  name: z.string().min(1, "Meno je povinné"),
-  lastname: z.string().min(1, "Priezvisko je povinné"),
-  email: z.string().email("Email musí mat platný formát"),
-  password: z.string().min(1, "Heslo je povinné")
-});
+import { useRouter } from "next/navigation";
 
-const AdminAddUserForm = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(newUserSchema)
+// Define schema using Zod
+const formSchema = z
+  .object({
+    name: z.string().min(1, { message: "Meno je povinné" }),
+    last_name: z.string().min(1, { message: "Priezvisko je povinné" }),
+    email: z.string().email(),
+    password: z.string().min(1, { message: "Heslo je povinné" }),
+    password_confirmation: z.string(),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: "Heslá sa nezhodujú",
+    path: ["password_confirmation"],
   });
+
+export default function RegisterForm() {
   const router = useRouter();
 
-  const onSubmit = async data => {
-    console.log(data); 
+  // Initialize form with validation schema
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      last_name: "",
+      email: "",
+      password: "",
+      password_confirmation: "",
+    },
+  });
+
+  // Handle form submission
+  function onSubmit(values: z.infer<typeof formSchema>) {
     fetch(apiUrl + "register", {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        username: values.email,
+        password: values.password,
+        name: values.name,
+        lastname: values.last_name,
+      }),
     })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
-      router.push('/admin-dashboard'); 
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-    });
-  };
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        router.push("/"); // Navigate after successful registration
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }
 
   return (
-    <div className="w-full max-w-xs m-auto">
-      <Form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <FormItem>
-          <FormLabel>Meno</FormLabel>
-          <FormControl>
-            <Input type="text" {...register("name")} />
-            <FormMessage>{errors.name?.message}</FormMessage>
-          </FormControl>
-        </FormItem>
-        <FormItem>
-          <FormLabel>Priezvisko</FormLabel>
-          <FormControl>
-            <Input type="text" {...register("lastname")} />
-            <FormMessage>{errors.lastname?.message}</FormMessage>
-          </FormControl>
-        </FormItem>
-        <FormItem>
-          <FormLabel>Email</FormLabel>
-          <FormControl>
-            <Input type="email" {...register("email")} />
-            <FormMessage>{errors.email?.message}</FormMessage>
-          </FormControl>
-        </FormItem>
-        <FormItem>
-          <FormLabel>Heslo</FormLabel>
-          <FormControl>
-            <Input type="password" {...register("password")} />
-            <FormMessage>{errors.password?.message}</FormMessage>
-          </FormControl>
-        </FormItem>
-        <Button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-          Pridať
-        </Button>
-      </Form>
-    </div>
+    <Card>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meno</FormLabel>
+                  <FormControl>
+                    <Input size={40} placeholder="shadcn" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="last_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Priezvisko</FormLabel>
+                  <FormControl>
+                    <Input size={40} placeholder="shadcn" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input size={40} placeholder="shadcn" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Heslo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="shadcn" type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password_confirmation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Heslo znova</FormLabel>
+                  <FormControl>
+                    <Input placeholder="shadcn" type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">Registrovať</Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
-
-export default AdminAddUserForm;
