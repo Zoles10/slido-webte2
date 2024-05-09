@@ -32,5 +32,7 @@
   "register": "Register",
   "lastName": "Last name",
   "youAreOnTheHomepage": "You are on the homepage",
-  "addUser": "Add user"
+  "addUser": "Add user",
+  "filterText" : "Filter by text...",
+  "filterTopic" : "Filter by topic..."
 }

@@ -41,7 +41,7 @@ export default async function MyQuestions({
       <main className="flex min-h-screen flex-col items-center justify-center p-24 ">
         <div className="w-full max-w-2xl p-8 shadow-lg rounded-lg">
         {isAdmin && (
-                <QuestionsSwitch all={searchParams.all === "false"} />
+                <QuestionsSwitch all={searchParams.all === "true"} />
             )}
 
           <h1 className="text-2xl font-bold text-center">

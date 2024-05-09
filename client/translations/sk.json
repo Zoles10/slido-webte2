@@ -33,5 +33,7 @@
   "users": "Používatelia",
   "confirmPassword": "Potvrdenie hesla",
   "dontHaveQRCode": "Nemáte QR kód? Vyhľadajte otázku podľa kódu",
-  "addUser": "Pridať používateľa"
+  "addUser": "Pridať používateľa",
+  "filterText": "Filtrovať názov ...",
+  "filterTopic": "Filtrovať predmet ..."
 }
