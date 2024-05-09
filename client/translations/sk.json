@@ -32,5 +32,6 @@
   "register": "Registrovať",
   "users": "Používatelia",
   "confirmPassword": "Potvrdenie hesla",
-  "dontHaveQRCode": "Nemáte QR kód? Vyhľadajte otázku podľa kódu"
+  "dontHaveQRCode": "Nemáte QR kód? Vyhľadajte otázku podľa kódu",
+  "addUser": "Pridať používateľa"
 }

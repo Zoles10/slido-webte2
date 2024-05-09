@@ -31,5 +31,6 @@
   "users": "Users",
   "register": "Register",
   "lastName": "Last name",
-  "youAreOnTheHomepage": "You are on the homepage"
+  "youAreOnTheHomepage": "You are on the homepage",
+  "addUser": "Add user"
 }

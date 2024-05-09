@@ -4,7 +4,6 @@ import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
 import UsersTable from "@/components/ui/usersTable";
-import Link from "next/link";
 import { FormattedMessage } from "react-intl";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
 
@@ -37,15 +36,27 @@ export default async function Users({
           <h1 className="text-2xl font-bold text-center">
             <FormattedMessage id="users" />
           </h1>
+
           <UsersTable all={searchParams.all == "true"} />
-          <div
-            className="mt-4 text-center text-orange-500 hover:underline  cursor-pointer"
-            onClick={() => {
-              window.location.href = "/home";
-            }}
-          >
-            <FormattedMessage id="home" />
+          <div className="actions-container mt-4 text-center">
+            <div
+              className="text-orange-500 hover:underline cursor-pointer mx-2"
+              onClick={() => {
+                window.location.href = "/home";
+              }}
+            >
+              <FormattedMessage id="home" />
+            </div>
+            <div
+              className="text-orange-500 hover:underline cursor-pointer mx-2"
+              onClick={() => {
+                window.location.href = "/home/createUser";
+              }}
+            >
+              <FormattedMessage id="addUser" />
+            </div>
           </div>
+
         </div>
       </main>
     </>
