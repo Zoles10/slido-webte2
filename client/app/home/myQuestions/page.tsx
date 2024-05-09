@@ -8,6 +8,8 @@ import QuestionsSwitch from "@/components/ui/questionsSwitch";
 import Link from "next/link";
 import { FormattedMessage } from "react-intl";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
+import { useAuth } from "@/components/auth/auth_provider";
+
 
 export type Question = {
   question_string: any;
@@ -24,6 +26,8 @@ export default async function MyQuestions({
     all: string;
   };
 }) {
+
+  const { isAdmin } = useAuth();
   return (
     <>
       <header className="flex justify-between items-center w-full p-2">
@@ -36,7 +40,9 @@ export default async function MyQuestions({
       </header>
       <main className="flex min-h-screen flex-col items-center justify-center p-24 ">
         <div className="w-full max-w-2xl p-8 shadow-lg rounded-lg">
-          <QuestionsSwitch all={searchParams.all == "true"} />
+        {isAdmin && (
+                <QuestionsSwitch all={searchParams.all === "false"} />
+            )}
 
           <h1 className="text-2xl font-bold text-center">
             <FormattedMessage id="myQuestions" />

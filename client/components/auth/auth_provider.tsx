@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { set } from "react-hook-form";
 
 type User = {
   id: number;
@@ -17,6 +18,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAdmin, setRole] = useState(false);
 
   const login = async (email: string, password: string) => {
     fetch(apiUrl + "login", {
@@ -53,6 +56,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           };
           setUser(userData);
           setIsAuthenticated(true);
+          if (data.role == "admin") {
+            setRole(true);
+          }
         } else {
           throw new Error(data.error || "Login failed");
         }
@@ -78,7 +84,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [isAuthenticated, user, router]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated,isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
