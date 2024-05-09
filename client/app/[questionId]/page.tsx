@@ -10,6 +10,17 @@ import { Input } from "@/components/ui/input";
 import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
+import ExportQuestionButton from "@/components/ui/exportQuestionButton";
+import { set } from "react-hook-form";
+
+async function getAnswers(questionId: string) {
+  return fetch(apiUrl + "answer/" + questionId).then((response) => {
+    if (!response.ok) {
+      throw new Error("Failed to fetch answers");
+    }
+    return response.json();
+  });
+}
 
 type QuestionOption = {
   question_option_id: number;
@@ -77,9 +88,12 @@ export default function Page({ params }: { params: { questionId: string } }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState("");
+  const [questionType, setQuestionType] = useState("");
   const [data, setData] = useState<QuestionData | null>(null);
   const [options, setOptions] = useState<QuestionOption[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [answerList, setAnswerList] = useState([]);
+
 
   const handleCheckboxChange = (optionString: string, isChecked: boolean) => {
     setLoading(true);
@@ -99,32 +113,55 @@ export default function Page({ params }: { params: { questionId: string } }) {
 
   useEffect(() => {
     setLoading(true);
-    getDataQuestion(params.questionId)
-      .then((data) => {
+  
+    // Defining an async function inside useEffect
+    const fetchData = async () => {
+      try {
+        // Fetching answers
+        const answerData = await getAnswers(params.questionId);
+        let processedAnswers = [];
+  
+        if (questionType === "multiple_choice") {
+          const answerCounts = new Map();
+          answerData.forEach((item: any) => {
+            item.name.split(";").forEach((answer: string) => {
+              answerCounts.set(answer, (answerCounts.get(answer) || 0) + 1);
+            });
+          });
+          processedAnswers = Array.from(answerCounts, ([name, amount]) => ({
+            name,
+            amount
+          }));
+          console.log("processedAnswers:", processedAnswers);
+        } else {
+          processedAnswers = answerData; // Assuming 'answerData' already structured as needed
+        }
+        setAnswerList(processedAnswers);
+  
+        // Fetching question data and options if needed
+        const data = await getDataQuestion(params.questionId);
         console.log("Data:", data);
         setData(data);
         setQuestion(data.question_string);
+        setQuestionType(data.question_type);
+  
         if (data.question_type === "multiple_choice") {
-          getQuestionOptions(data.question_id)
-            .then((options) => {
-              console.log("Options:", options);
-              setOptions(options);
-              setLoading(false);
-            })
-            .catch((error) => {
-              setError(
-                "Failed to load the question options. Please try again."
-              );
-              setLoading(false);
-            });
+          const options = await getQuestionOptions(data.question_id);
+          console.log("Options:", options);
+          setOptions(options);
         }
-        setLoading(false);
-      })
-      .catch((error) => {
-        setError("Failed to load the question. Please try again.");
-        setLoading(false);
-      });
-  }, [params.questionId]);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+        setError("Failed to load data. Please try again.");
+      } finally {
+        setLoading(false); // Ensure loading is set to false after all operations
+      }
+    };
+  
+    // Call the async function
+    fetchData();
+  }, [params.questionId, questionType]); // Ensure all dependencies are listed
+  
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -143,6 +180,7 @@ export default function Page({ params }: { params: { questionId: string } }) {
       });
   };
 
+  
   return (
     <div>
       <header className="flex justify-between items-center w-full p-2">
@@ -155,6 +193,7 @@ export default function Page({ params }: { params: { questionId: string } }) {
       </header>
       <main className="flex flex-col p-2 items-center">
         <TypographyH2>{question}</TypographyH2>
+        <ExportQuestionButton questionData={data} questionOptions={answerList} />
         <form onSubmit={handleSubmit}>
           {data?.question_type === "open_end" && (
             <Input
