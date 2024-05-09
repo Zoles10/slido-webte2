@@ -10,9 +10,10 @@ import Search from "@/components/search";
 import NavigateMyQuestions from "@/components/ui/navigateMyQuestions";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
 import { FormattedMessage } from "react-intl";
+import NavigateToUsers from "@/components/ui/navigateToUsers";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user,isAdmin } = useAuth();
   return (
     <>
       <header className="flex justify-between items-center w-full p-2">
@@ -22,6 +23,7 @@ export default function Home() {
           <ModeToggle />
           <NavigateButton />
           <NavigateMyQuestions />
+         {!isAdmin && (<NavigateToUsers/>)} 
           <LogoutButton />
         </div>
       </header>

@@ -9,6 +9,7 @@
   "dontHaveQRCode": "Don't have a QR code? Find question by code",
   "logout": "Logout",
   "myQuestions": "My questions",
+  "users" : "Users",
   "createQuestion": "Create question",
   "createNewQuestion": "Create new question",
   "fillOutFormAndAddQuestion": "Fill out the form and add a question",
