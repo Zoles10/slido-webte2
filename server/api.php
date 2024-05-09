@@ -16,7 +16,7 @@ function sendCORSHeaders()
 {
   header("Access-Control-Allow-Origin: http://localhost:3000");
   header("Access-Control-Allow-Credentials: true");
-  header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+  header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
   header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
   if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
@@ -51,6 +51,12 @@ switch ($_SERVER["REQUEST_METHOD"]) {
     break;
   case 'GET':
     handleGetActions($action, $firstParam, $secondParam, $conn);
+    break;
+  case 'PUT':
+    handlePutActions($action, $firstParam, $secondParam, $conn);
+    break;
+  case 'DELETE':
+    handleDeleteActions($action, $firstParam, $secondParam, $conn);
     break;
   default:
     http_response_code(405);
@@ -116,7 +122,39 @@ function handleGetActions($action, $firstParam, $secondParam, $conn)
   }
 }
 
+function handlePutActions($action, $firstParam, $secondParam, $conn)
+{
+  switch ($action) {
+    case 'password':
+      changePassword($conn);
+      break;
+    case 'username':
+      changeUsername($conn);
+      break;
+    case 'question':
+      if ($firstParam) {
+        updateQuestion($conn, $firstParam);
+      }
+      break;
+    default:
+      echo json_encode(['error' => 'Invalid action', 'action' => $action]);
+      break;
+  }
+}
 
+function handleDeleteActions($action, $firstParam, $secondParam, $conn)
+{
+  switch ($action) {
+    case 'question':
+      if ($firstParam) {
+        deleteQuestion($conn, $firstParam);
+      }
+      break;
+    default:
+      echo json_encode(['error' => 'Invalid action', 'action' => $action]);
+      break;
+  }
+}
 function registerUser($conn)
 {
   $inputJSON = file_get_contents('php://input');
@@ -197,7 +235,7 @@ function loginUser($conn)
 
   $email = $conn->real_escape_string($input['email']);
   $password = $input['password'];
-  $stmt = $conn->prepare("SELECT user_id,name, lastname, password FROM User WHERE email = ?");
+  $stmt = $conn->prepare("SELECT user_id,name, lastname, role, password FROM User WHERE email = ?");
   $stmt->bind_param("s", $email);
   $stmt->execute();
   $result = $stmt->get_result();
@@ -208,11 +246,12 @@ function loginUser($conn)
     $user_id = $row['user_id'];
     $name = $row['name'];
     $lastname = $row['lastname'];
+    $role = $row['role'];
 
     if (password_verify($password, $hashed_password)) {
       $jwt = issueJwt($user_id, $email);
       $refreshToken = issueRefreshToken($conn, $user_id);
-      echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken, 'user_id' => $user_id, 'email' => $email, 'expires_at' => date('Y-m-d H:i:s', strtotime('+7 days')), 'issued_at' => date('Y-m-d H:i:s'), 'name' => $name, 'lastname' => $lastname]);
+      echo json_encode(['message' => 'Login successful', 'jwt' => $jwt, 'refreshToken' => $refreshToken, 'user_id' => $user_id, 'email' => $email, 'expires_at' => date('Y-m-d H:i:s', strtotime('+7 days')), 'issued_at' => date('Y-m-d H:i:s'), 'name' => $name, 'lastname' => $lastname, 'role' => $role]);
     } else {
       echo json_encode(['error' => 'Invalid password']);
     }
@@ -314,13 +353,13 @@ function getQuestions($conn)
 
 function getUsers($conn)
 {
-    $result = $conn->query("SELECT user_id, email, name, lastname, created_at, role FROM User");
+  $result = $conn->query("SELECT user_id, email, name, lastname, created_at, role FROM User");
 
-    $users = [];
-    while ($row = $result->fetch_assoc()) {
-        $users[] = $row;
-    }
-    echo json_encode($users);
+  $users = [];
+  while ($row = $result->fetch_assoc()) {
+    $users[] = $row;
+  }
+  echo json_encode($users);
 }
 
 
@@ -675,6 +714,85 @@ function getQuestionOptions($conn, $question_id)
   $stmt->close();
 }
 
+function updateQuestion($conn, $firstParam)
+{
+  $data = json_decode(file_get_contents("php://input"), true);
+  if (!isset($data['question_string']) || !isset($data['question_type']) || !isset($data['topic'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing required fields']);
+    return;
+  }
+
+  $question_string = $conn->real_escape_string($data['question_string']);
+  $question_type = $conn->real_escape_string($data['question_type']);
+  $topic = $conn->real_escape_string($data['topic']);
+  // $active = $data['active'];
+
+  $stmt = $conn->prepare("UPDATE Question SET question_string = ?, question_type = ?, topic = ? WHERE code = ?");
+  $stmt->bind_param("sssi", $question_string, $question_type, $topic, $firstParam);
+
+  if ($stmt->execute()) {
+    echo json_encode(['message' => 'Question updated successfully']);
+  } else {
+    echo json_encode(['error' => $stmt->error]);
+  }
+
+  $stmt->close();
+}
+
+function deleteQuestion($conn, $code)
+{
+  $conn->begin_transaction();
+
+  try {
+    $stmt = $conn->prepare("SELECT question_id FROM Question WHERE code = ?");
+    $stmt->bind_param("s", $code);
+    if (!$stmt->execute()) {
+      throw new Exception("Error fetching question: " . $stmt->error);
+    }
+
+    $result = $stmt->get_result();
+    if ($result->num_rows == 0) {
+      throw new Exception("No question found with the given code.");
+    }
+
+    $row = $result->fetch_assoc();
+    $question_id = $row['question_id'];
+    $stmt->close();
+
+    // Delete all answers related to the question
+    $stmt = $conn->prepare("DELETE FROM Answer WHERE question_id = ?");
+    $stmt->bind_param("i", $question_id);
+    if (!$stmt->execute()) {
+      throw new Exception("Error deleting answers: " . $stmt->error);
+    }
+    $stmt->close();
+
+    // Delete all question options related to the question
+    $stmt = $conn->prepare("DELETE FROM QuestionOption WHERE question_id = ?");
+    $stmt->bind_param("i", $question_id);
+    if (!$stmt->execute()) {
+      throw new Exception("Error deleting question options: " . $stmt->error);
+    }
+    $stmt->close();
+
+    // Delete the question itself
+    $stmt = $conn->prepare("DELETE FROM Question WHERE question_id = ?");
+    $stmt->bind_param("i", $question_id);
+    if (!$stmt->execute()) {
+      throw new Exception("Error deleting question: " . $stmt->error);
+    }
+    $stmt->close();
+
+    // Commit the transaction if all deletions were successful
+    $conn->commit();
+    echo json_encode(['message' => 'Question and related data deleted successfully']);
+  } catch (Exception $e) {
+    // Rollback the transaction on error
+    $conn->rollback();
+    echo json_encode(['error' => $e->getMessage()]);
+  }
+}
 
 
 
