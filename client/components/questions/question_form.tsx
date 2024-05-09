@@ -39,8 +39,9 @@ export default function QuestionForm({
   initialData: any;
   isEditMode: boolean;
 }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const router = useRouter();
+  const [users, setUsers] = useState([]);
   console.log("initialData form", initialData);
   const form = useForm({
     resolver: zodResolver(questionFormSchema),
@@ -50,13 +51,39 @@ export default function QuestionForm({
       topic: initialData?.topic || "",
       active: initialData?.active ? "true" : "false",
       options: [{ option: "", isCorrect: false }],
-      user_id: user?.id || null,
+      user_id: isAdmin ? "" : user?.id || "",
     },
   });
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "options",
   });
+
+  useEffect(() => {
+    if (isAdmin) {
+      const fetchUsers = async () => {
+        try {
+          const response = await fetch(apiUrl + "users", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            console.log("users", data);
+            setUsers(data);
+          } else {
+            throw new Error("Failed to fetch users");
+          }
+        } catch (error) {
+          console.error("Error fetching users:", error);
+        }
+      };
+
+      fetchUsers();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     if (initialData) {
@@ -73,6 +100,7 @@ export default function QuestionForm({
     e.preventDefault();
     const values = form.getValues();
     values.active = values.active === "true";
+    console.log("values.user", values.user_id);
     const endpoint = apiUrl + (isEditMode ? `question/${code}` : "question");
     const method = isEditMode ? "PUT" : "POST";
     console.log("values", JSON.stringify(values));
@@ -86,7 +114,7 @@ export default function QuestionForm({
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.error || "Failed to submit question");
-      router.push("/myQuestions");
+      router.push("/home/myQuestions");
     } catch (error) {
       console.error("Submission error:", error);
       form.setError("root", { type: "manual", message: error.message });
@@ -200,6 +228,34 @@ export default function QuestionForm({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="user_id"
+          render={({ field }) =>
+            isAdmin ? (
+              <FormItem>
+                <FormLabel>
+                  <FormattedMessage id="user" />
+                </FormLabel>
+                <Select {...field} value={field.value || ""}>
+                  {users?.map((u) => (
+                    <option key={u.id} value={u.user_id}>
+                      {u.name + " " + u.lastname}
+                    </option>
+                  ))}
+                </Select>
+              </FormItem>
+            ) : (
+              <FormItem>
+                <FormLabel>
+                  <FormattedMessage id="user" />
+                </FormLabel>
+                <Input {...field} value={user?.id.toString()} readOnly />
+              </FormItem>
+            )
+          }
+        />
+
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {isEditMode ? "Update Question" : "Add Question"}
         </Button>
