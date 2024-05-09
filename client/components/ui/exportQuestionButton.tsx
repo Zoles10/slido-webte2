@@ -13,10 +13,7 @@ const downloadCSV = (questionData, questionOptions) => {
 
     // Start the CSV content with headers
     let csvContent = '"Question";"Answers";"Amount"\n';
-
-    // Loop over questionOptions to add data rows
     questionOptions.forEach((option, index) => {
-        // For the first option, include the question, for others, leave the question cell empty
         if (index === 0) {
             csvContent += `"${question}";"${option.name}";${option.amount}\n`;
         } else {
