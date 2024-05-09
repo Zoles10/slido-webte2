@@ -155,6 +155,11 @@ function handleDeleteActions($action, $firstParam, $secondParam, $conn)
         deleteQuestion($conn, $firstParam);
       }
       break;
+    case 'user':
+      if ($firstParam) {
+        deleteUserAndTokens($conn, $firstParam);
+      }
+      break;
     default:
       echo json_encode(['error' => 'Invalid action', 'action' => $action]);
       break;
@@ -819,6 +824,39 @@ function getActiveQuestion($conn, $code)
   $stmt->close();
 }
 
+function deleteUserAndTokens($conn, $user_id) {
+  if (!$user_id) {
+      echo json_encode(['error' => 'Missing user_id parameter']);
+      return;
+  }
+
+  $conn->begin_transaction();
+
+  try {
+      $deleteTokensStmt = $conn->prepare("DELETE FROM refresh_tokens WHERE user_id = ?");
+      $deleteTokensStmt->bind_param("i", $user_id);
+      $deleteTokensStmt->execute();
+
+      if ($deleteTokensStmt->affected_rows > 0) {
+          echo json_encode(['message' => 'Associated tokens deleted']);
+      } else {
+          echo json_encode(['message' => 'No associated tokens found']);
+      }
+
+      $deleteUserStmt = $conn->prepare("DELETE FROM User WHERE id = ?");
+      $deleteUserStmt->bind_param("i", $user_id);
+      $deleteUserStmt->execute();
+
+      $conn->commit();
+      echo json_encode(['message' => "User $user_id and associated tokens deleted successfully"]);
+  } catch (Exception $e) {
+    $conn->rollback();
+      echo json_encode(['error' => "An error occurred: " . $e->getMessage()]);
+  } finally {
+      $deleteTokensStmt->close();
+      $deleteUserStmt->close();
+  }
+}
 
 
 $conn->close();
