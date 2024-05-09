@@ -11,6 +11,7 @@ import { useAuth } from "../auth/auth_provider";
 import { apiUrl } from "@/utils/config";
 import { FormattedMessage } from "react-intl";
 import { Input } from "@/components/ui/input";
+import { Button } from "./button";
 import {
   Pagination,
   PaginationContent,
@@ -20,6 +21,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useRouter } from "next/navigation";
 
 interface User {
   user_id: number;
@@ -49,6 +51,7 @@ async function fetchUsers(): Promise<User[]> {
 
 const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
   const { user } = useAuth();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -156,6 +159,9 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
             <TableHead>
               <FormattedMessage id="dateOfCreation" />
             </TableHead>
+            <TableHead>
+              <FormattedMessage id="actions" />
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -168,6 +174,15 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
                   {new Date(user.created_at).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                <Button
+                    onClick={() =>
+                      router.push(`/home/createUser/${user.user_id}`)
+                    }
+                  >
+                    <FormattedMessage id="edit" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
