@@ -866,7 +866,7 @@ function deleteUserAndTokens($conn, $user_id) {
 function updateUser($conn, $user_id)
 {
   $data = json_decode(file_get_contents("php://input"), true);
-  if (!isset($data['email']) || !isset($data['name']) || !isset($data['lastname']) || !isset($data['role'])) {
+  if (!isset($data['email']) || !isset($data['password']) || !isset($data['name']) || !isset($data['lastname']) || !isset($data['role'])) {
       http_response_code(400);
       echo json_encode(['error' => 'Missing required fields']);
       return;
@@ -875,10 +875,11 @@ function updateUser($conn, $user_id)
   $email = $conn->real_escape_string($data['email']);
   $name = $conn->real_escape_string($data['name']);
   $lastname = $conn->real_escape_string($data['lastname']);
+  $password = password_hash($data['password'], PASSWORD_DEFAULT);
   $role = $conn->real_escape_string($data['role']);
 
-  $stmt = $conn->prepare("UPDATE User SET email = ?, name = ?, lastname = ?, role = ? WHERE user_id = ?");
-  $stmt->bind_param("ssssi", $email, $name, $lastname, $role, $user_id);
+  $stmt = $conn->prepare("UPDATE User SET email = ?, password = ? , name = ?, lastname = ?, role = ? WHERE user_id = ?");
+  $stmt->bind_param("ssssi", $email, $password, $name, $lastname, $role, $user_id);
 
   if ($stmt->execute()) {
       echo json_encode(['message' => 'User updated successfully']);
