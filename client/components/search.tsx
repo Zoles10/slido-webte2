@@ -17,7 +17,9 @@ export default function Search() {
 
     try {
       // Replace the URL with your API endpoint and include the ID in the query
-      const response = await fetch(`https://node98.webte.fei.stuba.sk/slido-webte2/server/api/question/${value}`);
+      const response = await fetch(
+        `https://node98.webte.fei.stuba.sk/slido-webte2/server/api/activeQuestion/${value}`
+      );
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -27,8 +29,7 @@ export default function Search() {
         router.push("/" + value);
         router.refresh();
         return;
-      }
-      else{
+      } else {
         toast("Nepodarilo sa nájsť otázku s týmto kódom", {
           description: "Skúste iný kód alebo kontaktujte organizátora.",
           important: true,

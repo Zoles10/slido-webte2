@@ -27,6 +27,7 @@ export default function CreateEditQuestion({
         .then((response) => response.json())
         .then((data) => {
           console.log(data);
+          data.active = data.active ? "true" : "false";
           setInitialData(data);
         })
         .catch((error) => console.error("Failed to fetch question", error));

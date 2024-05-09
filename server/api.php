@@ -108,6 +108,11 @@ function handleGetActions($action, $firstParam, $secondParam, $conn)
         getQuestions($conn);
       }
       break;
+    case 'activeQuestion':
+      if ($firstParam) {
+        getActiveQuestion($conn, $firstParam);
+      }
+      break;
     case 'answer':
       if ($firstParam) {
         getAnswersByCode($conn, $firstParam);
@@ -368,29 +373,37 @@ function generateUniqueCode($conn)
   $code = '';
   $count = 0;
   do {
-    $code = sprintf("%05d", rand(0, 99999));
+    $code = rand(10000, 99999);
+    $code = sprintf("%05d", $code);
+
     $query = "SELECT COUNT(*) FROM Question WHERE code = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("s", $code);
     $stmt->execute();
-    $stmt->bind_result($count);  // Bind the result of the query to the $count variable
-    $stmt->fetch();  // Fetch the result into the bound variable $count
+    $stmt->bind_result($count);
+    $stmt->fetch();
     $stmt->close();
-  } while ($count > 0);  // Ensure the code is unique by checking the database
+  } while ($count > 0);
 
   return $code;
 }
 
 
 
+
 function postQuestion($conn)
 {
-  $decoded = verifyToken();
+  // $decoded = verifyToken();
   $questionData = json_decode(file_get_contents("php://input"), true);
 
-  if (!$questionData || !isset($questionData['question_string']) || !isset($questionData['question_type']) || !isset($questionData['topic']) || !isset($questionData['user_id'])) {
+  if (!$questionData || !isset($questionData['question_string']) || !isset($questionData['question_type']) || !isset($questionData['topic']) || !isset($questionData['user_id']) || !isset($questionData['active'])) {
+    echo json_decode(!isset($questionData['question_string']));
+    echo json_decode(!isset($questionData['question_type']));
+    echo json_decode(!isset($questionData['topic']));
+    echo json_decode(!isset($questionData['user_id']));
+    echo json_decode(!isset($questionData['active']));
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid data provided - missing fields']);
+    echo json_encode(['error' => 'Invalid data provided - missing fields', 'data' => $questionData]);
     return;
   }
   $question = $conn->real_escape_string($questionData['question_string']);
@@ -399,11 +412,8 @@ function postQuestion($conn)
   $active = isset($questionData['active']) ? (int)$questionData['active'] : 0;
   $userId =  $questionData['user_id'];
   $code = generateUniqueCode($conn);
-  // Prepare the SQL statement
   $stmt = $conn->prepare("INSERT INTO Question (user_id, question_string, question_type, active, topic, code) VALUES (?, ?, ?, ?, ?, ?)");
   $stmt->bind_param("issisi", $userId, $question, $question_type, $active, $topic, $code);
-
-  // Execute the query
   if ($stmt->execute()) {
 
     echo json_encode(['message' => 'Question added successfully', 'code' => $code]);
@@ -717,19 +727,19 @@ function getQuestionOptions($conn, $question_id)
 function updateQuestion($conn, $firstParam)
 {
   $data = json_decode(file_get_contents("php://input"), true);
-  if (!isset($data['question_string']) || !isset($data['question_type']) || !isset($data['topic'])) {
+  if (!isset($data['question_string']) || !isset($data['question_type']) || !isset($data['topic']) || !isset($data["active"])) {
     http_response_code(400);
     echo json_encode(['error' => 'Missing required fields']);
     return;
   }
 
+  $active = $data['active'];
   $question_string = $conn->real_escape_string($data['question_string']);
   $question_type = $conn->real_escape_string($data['question_type']);
   $topic = $conn->real_escape_string($data['topic']);
-  // $active = $data['active'];
 
-  $stmt = $conn->prepare("UPDATE Question SET question_string = ?, question_type = ?, topic = ? WHERE code = ?");
-  $stmt->bind_param("sssi", $question_string, $question_type, $topic, $firstParam);
+  $stmt = $conn->prepare("UPDATE Question SET question_string = ?, question_type = ?, topic = ?, active = ? WHERE code = ?");
+  $stmt->bind_param("sssii", $question_string, $question_type, $topic, $active, $firstParam);
 
   if ($stmt->execute()) {
     echo json_encode(['message' => 'Question updated successfully']);
@@ -792,6 +802,21 @@ function deleteQuestion($conn, $code)
     $conn->rollback();
     echo json_encode(['error' => $e->getMessage()]);
   }
+}
+
+function getActiveQuestion($conn, $code)
+{
+  $stmt = $conn->prepare("SELECT * FROM Question WHERE active = 1 AND code = ?");
+  $stmt->bind_param("s", $code);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows > 0) {
+    $question = $result->fetch_assoc();
+    echo json_encode($question);
+  } else {
+    echo json_encode(['message' => 'No active question found']);
+  }
+  $stmt->close();
 }
 
 

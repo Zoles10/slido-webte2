@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { apiUrl } from "@/utils/config";
 import { FormattedMessage } from "react-intl";
+import { useAuth } from "@/components/auth/auth_provider";
 
 const questionFormSchema = z.object({
   question_string: z
@@ -17,7 +18,7 @@ const questionFormSchema = z.object({
     .min(10, "The question must be at least 10 characters long."),
   question_type: z.enum(["multiple_choice", "open_end"]),
   topic: z.string(),
-  active: z.boolean().optional(),
+  active: z.boolean(),
   options: z
     .array(
       z.object({
@@ -38,6 +39,7 @@ export default function QuestionForm({
   initialData: any;
   isEditMode: boolean;
 }) {
+  const { user } = useAuth();
   const router = useRouter();
   console.log("initialData form", initialData);
   const form = useForm({
@@ -46,11 +48,11 @@ export default function QuestionForm({
       question_string: initialData?.question_string || "",
       question_type: initialData?.question_type || "",
       topic: initialData?.topic || "",
-      active: true,
+      active: initialData?.active ? "true" : "false",
       options: [{ option: "", isCorrect: false }],
+      user_id: user?.id || null,
     },
   });
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "options",
@@ -58,32 +60,19 @@ export default function QuestionForm({
 
   useEffect(() => {
     if (initialData) {
+      console.log("initialData active", initialData.active);
       form.reset({
         ...form.getValues(), // Preserve other values not provided by initialData
         ...initialData, // Overwrite with initial data
       });
+      console.log("form", form.getValues());
     }
   }, [initialData, form]);
 
-  // // Effect to load question data if in edit mode
-  // useEffect(() => {
-  //   if (code) {
-  //     setIsEdit(true);
-  //     fetch(`${apiUrl}/question/${code}`)
-  //       .then((response) => response.json())
-  //       .then((data) => {
-  //         form.reset(data); // Reset form fields with fetched data
-  //       })
-  //       .catch((error) => {
-  //         console.error("Failed to fetch question details:", error);
-  //       });
-  //   }
-  // }, [code, form]);
-
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const values = form.getValues(); // Directly get form values
-    console.log("Form data:", values);
+    const values = form.getValues();
+    values.active = values.active === "true";
     const endpoint = apiUrl + (isEditMode ? `question/${code}` : "question");
     const method = isEditMode ? "PUT" : "POST";
     console.log("values", JSON.stringify(values));
@@ -189,6 +178,25 @@ export default function QuestionForm({
                 <FormattedMessage id="topic" />
               </FormLabel>
               <Input {...field} />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="active"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                <FormattedMessage id="active" />
+              </FormLabel>
+              <Select {...field} value={field.value}>
+                <option value="">
+                  {" "}
+                  <FormattedMessage id="selectActive" />
+                </option>
+                <option value="true">True</option>
+                <option value="false">False</option>
+              </Select>
             </FormItem>
           )}
         />
