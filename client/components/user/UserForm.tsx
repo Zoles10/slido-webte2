@@ -1,79 +1,122 @@
 "use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "../ui/separator";
-import Link from "next/link";
-import { Paragraph } from "../ui/typography/typography";
+import { Card, CardContent } from "@/components/ui/card";
 import { apiUrl } from "@/utils/config";
 import { FormattedMessage } from "react-intl";
-
 import { useRouter } from "next/navigation";
 
-// Define schema using Zod
-const formSchema = z
+// Define schema with Zod
+const userFormSchema = z
   .object({
-    name: z.string().min(1, { message: "Meno je povinné" }),
-    last_name: z.string().min(1, { message: "Priezvisko je povinné" }),
+    name: z.string().min(1, { message: "Name is required" }),
+    lastname: z.string().min(1, { message: "Last name is required" }),
     email: z.string().email(),
-    password: z.string().min(1, { message: "Heslo je povinné" }),
-    password_confirmation: z.string(),
+    role: z.string().min(1, { message: "Role is required" }),
   })
-  .refine((data) => data.password === data.password_confirmation, {
-    message: "Heslá sa nezhodujú",
-    path: ["password_confirmation"],
-  });
 
-export default function RegisterForm() {
+
+interface UserFormProps {
+  initialData?: {
+    name: string;
+    lastname: string;
+    email: string;
+    user_id: string;
+    role: string;
+  };
+  isEditMode: boolean;
+  userId?: string;
+}
+
+export default function UserForm({ initialData, isEditMode, userId }: UserFormProps) {
   const router = useRouter();
+  console.log(initialData, ' initialData');
 
-  // Initialize form with validation schema
+  // Initialize the form with schema and default values
   const form = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(userFormSchema),
     defaultValues: {
-      name: "",
-      last_name: "",
-      email: "",
-      password: "",
-      password_confirmation: "",
+      name: initialData?.name || "",
+      lastname: initialData?.lastname || "",
+      email: initialData?.email || "",
+      role: initialData?.role || "",
     },
   });
 
   // Handle form submission
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    fetch(apiUrl + "register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: values.email,
-        password: values.password,
-        name: values.name,
-        lastname: values.last_name,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-        router.push("/"); // Navigate after successful registration
-      })
-      .catch((error) => {
-        console.error("Error:", error);
+  const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
+    const method = isEditMode ? "PUT" : "POST";
+    const endpoint = isEditMode ? `${apiUrl}user/${initialData.user_id}` : `${apiUrl}register`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+          lastname: values.lastname,
+          email: values.email,
+          role: values.role,
+        }),
       });
-  }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "An error occurred");
+      }
+
+      router.push("/home/users"); // Navigate after successful submission
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+  };
+
+  // Handle user deletion
+  const handleDelete = async () => {
+    if (!isEditMode || !userId) return;
+
+    try {
+      const response = await fetch(`${apiUrl}users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to delete user");
+
+      router.push("/"); // Navigate after successful deletion
+    } catch (error) {
+      console.error("Deletion error:", error);
+    }
+  };
+
+  // Reset form values if initialData is provided
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        lastname: initialData.lastname,
+        email: initialData.email,
+        role: initialData.role,
+      });
+    }
+  }, [initialData, form]);
 
   return (
     <Card>
@@ -89,7 +132,7 @@ export default function RegisterForm() {
                     <FormattedMessage id="name" />
                   </FormLabel>
                   <FormControl>
-                    <Input size={40} placeholder="shadcn" {...field} />
+                    <Input {...field} placeholder="First name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,14 +140,14 @@ export default function RegisterForm() {
             />
             <FormField
               control={form.control}
-              name="last_name"
+              name="lastname"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
                     <FormattedMessage id="lastName" />
                   </FormLabel>
                   <FormControl>
-                    <Input size={40} placeholder="shadcn" {...field} />
+                    <Input {...field} placeholder="Last name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -117,7 +160,7 @@ export default function RegisterForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input size={40} placeholder="shadcn" {...field} />
+                    <Input {...field} placeholder="Email address" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,37 +168,30 @@ export default function RegisterForm() {
             />
             <FormField
               control={form.control}
-              name="password"
+              name="role"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    <FormattedMessage id="password" />
+                    {" "}
+                    <FormattedMessage id="role" />
                   </FormLabel>
-                  <FormControl>
-                    <Input placeholder="shadcn" type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password_confirmation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    <FormattedMessage id="confirmPassword" />
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="shadcn" type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit">
-              <FormattedMessage id="register" />
-            </Button>
+                  <Select {...field}>
+                    <option value="">
+                      {" "}
+                      <FormattedMessage id="selectRole" />
+                    </option>
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                  </Select>
+            </FormItem>
+          )}
+        />
+            <Button type="submit">{isEditMode ? "Update User" : "Register"}</Button>
+            {isEditMode && (
+              <Button type="button" onClick={handleDelete} className="bg-red-500">
+                Delete User
+              </Button>
+            )}
           </form>
         </Form>
       </CardContent>
