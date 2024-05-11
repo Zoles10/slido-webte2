@@ -1,7 +1,8 @@
+import { apiUrl } from "@/utils/config";
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://your-api-url.com", // Replace with your API base URL
+  baseURL: apiUrl, // Replace with your API base URL
 });
 
 // Intercept request to include JWT in headers

@@ -1,10 +1,14 @@
 "use client";
-import API from "@/lib/axios";
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { set } from "react-hook-form";
 
 type User = {
   id: number;
@@ -44,10 +48,61 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .then((response) => response.json())
       .then((data) => {
         if (data.message) {
+          console.log("login", data);
           localStorage.setItem("token", data.jwt);
           localStorage.setItem("refreshToken", data.refreshToken);
-          document.cookie = `jwtToken=${data.token}; path=/; max-age=3600; secure; SameSite=None`;
+          localStorage.setItem("user_id", JSON.stringify(data.user_id));
+          document.cookie = `jwtToken=${data.jwt}; path=/; max-age=3600; secure; SameSite=None`;
           console.log("Login successful:", data);
+          const userData: User = {
+            id: data.user_id,
+            email: data.email,
+            name: data.name,
+            lastname: data.lastname,
+          };
+          setUser(userData);
+          setIsAuthenticated(true);
+          if (data.role == "admin") {
+            setRole(true);
+          }
+          console.log("User logged in:", userData); // Now this will log the updated user
+          router.push("/home");
+          router.refresh();
+        } else {
+          throw new Error(data.error || "Login failed");
+        }
+      })
+      .catch((error) => {
+        console.error("Login failed:", error);
+      });
+  };
+
+  const logout = () => {
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user_id");
+    document.cookie =
+      "jwtToken=; path = /; expires = Thu, 01 Jan 1970 00:00:00 GMT";
+    setUser(null);
+  };
+
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("user_id");
+
+    if (!token || !userId) {
+      return;
+    }
+
+    //get user
+    await fetch(apiUrl + "user/" + userId, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.user_id) {
           const userData: User = {
             id: data.user_id,
             email: data.email,
@@ -66,25 +121,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .catch((error) => {
         console.error("Login failed:", error);
       });
-  };
-
-  const logout = () => {
-    localStorage.removeItem("jwtToken");
-    document.cookie =
-      "jwtToken=; path = /; expires = Thu, 01 Jan 1970 00:00:00 GMT";
-    setUser(null);
-  };
+  }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/home");
-      router.refresh();
-      console.log("User logged in:", user); // Now this will log the updated user
-    }
-  }, [isAuthenticated, user, router]);
+    checkAuth();
+  }, [checkAuth]);
+
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     // router.push("/home");
+  //     // router.refresh();
+  //     console.log("User logged in:", user); // Now this will log the updated user
+  //   }
+  // }, [isAuthenticated, user, router]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated,isAdmin }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, isAuthenticated, isAdmin }}
+    >
       {children}
     </AuthContext.Provider>
   );

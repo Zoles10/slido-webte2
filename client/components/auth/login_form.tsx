@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,8 +26,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Paragraph } from "../ui/typography/typography";
 import { Separator } from "../ui/separator";
-import { apiUrl } from "@/utils/config";
-import { useIntl } from "react-intl";
+
 import { FormattedMessage } from "react-intl";
 
 const formSchema = z.object({
@@ -40,7 +38,6 @@ const formSchema = z.object({
 
 export default function LoginForm() {
   const { login, isAuthenticated } = useAuth();
-  const intl = useIntl();
   const router = useRouter();
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,8 +47,8 @@ export default function LoginForm() {
       password: "",
     },
   });
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    login(values.email, values.password);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    await login(values.email, values.password);
     if (isAuthenticated) {
       console.log("logged in");
       router.push("/home");

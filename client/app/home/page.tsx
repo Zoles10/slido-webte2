@@ -3,7 +3,6 @@ import { useAuth } from "@/components/auth/auth_provider";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Button } from "@/components/ui/button";
 import NavigateButton from "@/components/ui/navigateButton";
 import { Label } from "@/components/ui/label";
 import Search from "@/components/search";
@@ -11,6 +10,7 @@ import NavigateMyQuestions from "@/components/ui/navigateMyQuestions";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
 import { FormattedMessage } from "react-intl";
 import NavigateToUsers from "@/components/ui/navigateToUsers";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
   const { user, isAdmin } = useAuth();
@@ -28,15 +28,19 @@ export default function Home() {
         </div>
       </header>
       <main className="flex min-h-screen flex-col items-center justify-center  space-y-10">
-        <div className="flex flex-row">
-          <h1 className="text-2xl font-bold">
-            <FormattedMessage id="welcome" defaultMessage="Vitajte" />
-            &nbsp;
-          </h1>
-          <h1 className="text-2xl font-bold text-orange-500">
-            {` ${user?.name}  ${user?.lastname}` ?? "John doe"}
-          </h1>
-        </div>
+        {user ? (
+          <div className="flex flex-row">
+            <h1 className="text-2xl font-bold">
+              <FormattedMessage id="welcome" defaultMessage="Vitajte" />
+              &nbsp;
+            </h1>
+            <h1 className="text-2xl font-bold text-orange-500">
+              {` ${user?.name}  ${user?.lastname}`}
+            </h1>
+          </div>
+        ) : (
+          <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+        )}
         <p className="text-lg">
           <FormattedMessage
             id="youAreOnTheHomepage"

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Logo from "@/components/logo";
 import LogoutButton from "@/components/ui/logoutButton";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Paragraph, TypographyH2 } from "@/components/ui/typography/typography";
+import { TypographyH2 } from "@/components/ui/typography/typography";
 import ResultsView from "./results-view"; // Ensure this component is ready to display the structure
 import { Loader2 } from "lucide-react";
 import { apiUrl } from "@/utils/config";

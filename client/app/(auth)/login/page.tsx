@@ -1,6 +1,4 @@
-import Link from "next/link";
 import LoginForm from "../../../components/auth/login_form";
-import { Paragraph } from "@/components/ui/typography/typography";
 
 export default function Home() {
   return (

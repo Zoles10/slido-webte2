@@ -11,7 +11,6 @@ import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
 import ExportQuestionButton from "@/components/ui/exportQuestionButton";
-import { set } from "react-hook-form";
 
 async function getAnswers(questionId: string) {
   return fetch(apiUrl + "answer/" + questionId).then((response) => {
