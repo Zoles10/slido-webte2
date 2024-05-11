@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/pagination";
 import { Button } from "./button";
 import { useRouter } from "next/navigation";
+import { create } from "domain";
 
 interface QuestionTableProps {
   all: boolean;
@@ -93,6 +94,28 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
     indexFirstQuestion,
     indexLastQuestion
   );
+  const createCopyQuestion = async (code: any) => {
+    try {
+      const response = await fetch(`${apiUrl}copyQuestion/${code}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to copy question");
+      }
+
+      alert("Question copied successfully!");
+      router.push(`/home/createQuestion/${result.newCode}`);
+    } catch (error: any) {
+      console.error("Error copying question:", error.message);
+      alert("Error copying question: " + error.message);
+    }
+  };
+
   const renderPagination = () => {
     let items = [];
     for (let number = 1; number <= totalPages; number++) {
@@ -192,6 +215,9 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
                     }
                   >
                     <FormattedMessage id="edit" />
+                  </Button>
+                  <Button onClick={() => createCopyQuestion(question.code)}>
+                    <FormattedMessage id="copy" />
                   </Button>
                 </TableCell>
               </TableRow>

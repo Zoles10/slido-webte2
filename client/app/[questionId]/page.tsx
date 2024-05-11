@@ -216,7 +216,8 @@ export default function Page({ params }: { params: { questionId: string } }) {
             />
           )}
           {data?.question_type === "multiple_choice" &&
-            options.map((option) => (
+            !options.message &&
+            options?.map((option) => (
               <div key={option.question_option_id}>
                 <input
                   type="checkbox"

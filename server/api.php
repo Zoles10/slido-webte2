@@ -88,10 +88,16 @@ function handlePostActions($action, $firstParam, $secondParam, $conn)
         return;
       }
       postQuestionOption($conn, $firstParam);
+
       break;
     case 'archivedQuestion':
       if ($firstParam) {
         postArchiveQuestion($conn, $firstParam);
+      }
+      break;
+    case 'copyQuestion':
+      if ($firstParam) {
+        copyQuestion($conn, $firstParam);
       }
       break;
     default:
@@ -102,11 +108,13 @@ function handlePostActions($action, $firstParam, $secondParam, $conn)
 
 function handleGetActions($action, $firstParam, $secondParam, $conn)
 {
-  switch ($action) {
 
+  switch ($action) {
     case 'question':
       if ($firstParam && $secondParam === 'options') {
         getQuestionOptions($conn, $firstParam);
+      } else if ($firstParam && $secondParam === 'getQuestionOptionsByCode') {
+        getQuestionOptionsByCode($conn, $firstParam);
       } else if ($firstParam) {
         getQuestionByCode($conn, $firstParam);
       } else {
@@ -146,6 +154,11 @@ function handleGetActions($action, $firstParam, $secondParam, $conn)
 function handlePutActions($action, $firstParam, $secondParam, $conn)
 {
   switch ($action) {
+    case 'questionOption':
+      if ($firstParam) {
+        updateQuestionOption($conn, $firstParam);
+      }
+      break;
     case 'password':
       changePassword($conn);
       break;
@@ -179,6 +192,10 @@ function handleDeleteActions($action, $firstParam, $secondParam, $conn)
     case 'user':
       if ($firstParam) {
         deleteUserAndTokens($conn, $firstParam);
+      }
+    case 'questionOption':
+      if ($firstParam) {
+        deleteQuestionOption($conn, $firstParam);
       }
       break;
     default:
@@ -467,7 +484,7 @@ function getAnswersByCode($conn, $code)
     $currentVoteStart = $row['currentVoteStart'];
   } else {
     if (is_numeric($code)) {
-      $question_id = $code;
+      $question_id = (int) $code; // Ensure it is treated as an integer
       // Validate whether this numeric code is a valid question_id and get currentVoteStart
       $validationStmt = $conn->prepare("SELECT currentVoteStart FROM Question WHERE question_id = ?");
       $validationStmt->bind_param("i", $question_id);
@@ -509,8 +526,6 @@ function getAnswersByCode($conn, $code)
     echo json_encode(['error' => 'No current voting period found for the given question']);
   }
 }
-
-
 
 
 
@@ -686,7 +701,7 @@ function postQuestionOption($conn, $code)
   // Check required fields
   if (!isset($data['option_string']) || !isset($data['correct'])) {
     http_response_code(400);
-    echo json_encode(['error' => 'Missing required fields']);
+    echo json_encode(['error' => 'Missing required fields', 'data' => $data]);
     return;
   }
 
@@ -736,6 +751,31 @@ function postQuestionOption($conn, $code)
   $stmt->close();
 }
 
+function updateQuestionOption($conn, $optionId)
+{
+  $data = json_decode(file_get_contents("php://input"), true);
+
+  if (!isset($data['option_string'], $data['correct'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing required fields']);
+    return;
+  }
+
+  $option_string = $conn->real_escape_string($data['option_string']);
+  $correct = $data['correct'];
+
+  $stmt = $conn->prepare("UPDATE QuestionOption SET option_string = ?, correct = ? WHERE question_option_id = ?");
+  $stmt->bind_param("sii", $option_string, $correct, $optionId);
+
+  if ($stmt->execute()) {
+    echo json_encode(['message' => 'Option updated successfully']);
+  } else {
+    echo json_encode(['error' => 'Failed to update option: ' . $stmt->error]);
+  }
+  $stmt->close();
+}
+
+
 function getQuestionOptions($conn, $question_id)
 {
   if (!$question_id) {
@@ -757,6 +797,38 @@ function getQuestionOptions($conn, $question_id)
     echo json_encode($questionOptions);
   } else {
     echo json_encode(['message' => 'No question found with the specified code', 'question_id' => $question_id]);
+  }
+
+  $stmt->close();
+}
+
+function getQuestionOptionsByCode($conn, $code)
+{
+  if (!$code) {
+    echo json_encode(['error' => 'Missing question_id parameter']);
+    return;
+  }
+
+  $stmt = $conn->prepare("SELECT question_id FROM Question WHERE code = ?");
+  $stmt->bind_param("s", $code);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $question_id = $result->fetch_assoc()['question_id'];
+
+  $stmt = $conn->prepare("SELECT * FROM QuestionOption WHERE question_id = ?");
+  $stmt->bind_param("i", $question_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  $questionOptions = [];
+  while ($row = $result->fetch_assoc()) {
+    $questionOptions[] = $row;
+  }
+
+  if (count($questionOptions) > 0) {
+    echo json_encode($questionOptions);
+  } else {
+    echo json_encode(['message' => 'No question found with the specified code', 'code' => $code]);
   }
 
   $stmt->close();
@@ -990,7 +1062,12 @@ $conn->close();
 
 function postArchiveQuestion($conn, $code)
 {
-  // Set the correct timezone
+  $inputJSON = file_get_contents('php://input');
+  $input = json_decode($inputJSON, TRUE); // convert JSON into array
+
+  // Check for required fields
+  $note = $conn->real_escape_string($input['note']);
+
   date_default_timezone_set('Europe/Berlin'); // Set this to the timezone of your server or target audience
 
   // Prepare the SQL statement to fetch question_id and currentVoteStart from Question
@@ -1008,10 +1085,10 @@ function postArchiveQuestion($conn, $code)
     $archived_date = date('Y-m-d H:i:s'); // Get current server time, adjusted by timezone setting
 
     // Use backticks to escape reserved keywords in column names
-    $insertStmt = $conn->prepare("INSERT INTO ArchivedQuestion (question_id, code, `from`, `to`) VALUES (?, ?, ?, ?)");
+    $insertStmt = $conn->prepare("INSERT INTO ArchivedQuestion (question_id, note, code, `from`, `to`) VALUES (?,?, ?, ?, ?)");
 
     // Bind parameters
-    $insertStmt->bind_param("isss", $question_id, $code, $currentVoteStart, $archived_date);
+    $insertStmt->bind_param("issss", $question_id, $note, $code, $currentVoteStart, $archived_date);
 
     // Execute the statement and check for errors
     if ($insertStmt->execute()) {
@@ -1051,7 +1128,7 @@ function getArchivedAnswers($conn, $code)
 
 
   // Now fetch all archived questions (votes) for this question_id
-  $archiveStmt = $conn->prepare("SELECT `from`, `to` FROM ArchivedQuestion WHERE question_id = ?");
+  $archiveStmt = $conn->prepare("SELECT `from`, `to`, note FROM ArchivedQuestion WHERE question_id = ?");
   $archiveStmt->bind_param("i", $question_id);
   $archiveStmt->execute();
   $archiveResults = $archiveStmt->get_result();
@@ -1060,6 +1137,7 @@ function getArchivedAnswers($conn, $code)
   while ($archiveRow = $archiveResults->fetch_assoc()) {
     $from = $archiveRow['from'];
     $to = $archiveRow['to'];
+    $note = $archiveRow['note'];
 
     // Fetch answers that fall within the from and to dates and count them
     $answersStmt = $conn->prepare("
@@ -1078,6 +1156,7 @@ function getArchivedAnswers($conn, $code)
     $allArchivedAnswers[] = [
       'from' => $from,
       'to' => $to,
+      'note' => $note,
       'answers' => $answers
     ];
   }
@@ -1085,4 +1164,67 @@ function getArchivedAnswers($conn, $code)
 
   // Return all archived answers
   echo json_encode($allArchivedAnswers);
+}
+
+function deleteQuestionOption($conn, $optionId)
+{
+  $stmt = $conn->prepare("DELETE FROM QuestionOption WHERE question_option_id = ?");
+  $stmt->bind_param("i", $optionId);
+  if ($stmt->execute()) {
+    echo json_encode(['message' => 'Option deleted successfully']);
+  } else {
+    echo json_encode(['error' => 'Failed to delete option: ' . $stmt->error]);
+  }
+  $stmt->close();
+}
+function copyQuestion($conn, $code)
+{
+  $stmt = $conn->prepare("SELECT * FROM Question WHERE code = ?");
+  $stmt->bind_param("s", $code);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows > 0) {
+    $question = $result->fetch_assoc();
+    $stmt->close();
+
+    // Generate a new unique code for the new question
+    $newCode = generateUniqueCode($conn);
+
+    // Prepare the statement to copy the question
+    $stmt = $conn->prepare("INSERT INTO Question (user_id, question_string, question_type, active, topic, code) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ississ", $question['user_id'], $question['question_string'], $question['question_type'], $question['active'], $question['topic'], $newCode);
+
+    if ($stmt->execute()) {
+      $newQuestionId = $conn->insert_id;
+      echo json_encode(['message' => 'Question copied successfully', 'newCode' => $newCode]);
+
+      // If the question type is multiple_choice, copy the options
+      if ($question['question_type'] == 'multiple_choice') {
+        copyQuestionOptions($conn, $question['question_id'], $newQuestionId);
+      }
+    } else {
+      echo json_encode(['error' => $stmt->error]);
+    }
+    $stmt->close();
+  } else {
+    echo json_encode(['message' => 'No question found with the specified code']);
+  }
+}
+
+function copyQuestionOptions($conn, $originalQuestionId, $newQuestionId)
+{
+  // Fetch all options associated with the original question
+  $stmt = $conn->prepare("SELECT * FROM QuestionOption WHERE question_id = ?");
+  $stmt->bind_param("i", $originalQuestionId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  while ($option = $result->fetch_assoc()) {
+    // Insert each option into the new question
+    $insertStmt = $conn->prepare("INSERT INTO QuestionOption (question_id, option_string, correct) VALUES (?, ?, ?)");
+    $insertStmt->bind_param("isi", $newQuestionId, $option['option_string'], $option['correct']);
+    $insertStmt->execute();
+    $insertStmt->close();
+  }
+  $stmt->close();
 }

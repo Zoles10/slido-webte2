@@ -31,6 +31,17 @@ export default function CreateEditQuestion({
           setInitialData(data);
         })
         .catch((error) => console.error("Failed to fetch question", error));
+
+      fetch(apiUrl + "question/" + code + "/getQuestionOptionsByCode")
+        .then((response) => response.json())
+        .then((data) => {
+          setInitialData((prevData: any) => {
+            return {
+              ...prevData,
+              options: data,
+            };
+          });
+        });
     }
   }, [code]);
 

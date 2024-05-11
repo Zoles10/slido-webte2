@@ -23,6 +23,7 @@ async function getAnswers(questionId: string) {
   if (!response.ok) {
     throw new Error("Failed to fetch answers");
   }
+  console.log(response);
   return response.json();
 }
 
@@ -71,15 +72,13 @@ export default function ResultsPage({
 
         setApiData(questionData);
 
-        // Process current answers
-        const processedCurrentAnswers = processAnswers(currentAnswersData);
-        setCurrentAnswers(processedCurrentAnswers);
+        setCurrentAnswers(currentAnswersData);
 
-        console.log(historicalAnswers);
         const processedHistoricData = historicalAnswers.map((period) => ({
           from: period.from,
           to: period.to,
-          answers: processAnswers(period.answers),
+          answers: period.answers,
+          note: period.note,
         }));
 
         setHistoricData(processedHistoricData);
@@ -115,6 +114,9 @@ export default function ResultsPage({
                 <h1 className="text-xl font-bold mt-4">
                   {data.from} to {data.to}
                 </h1>
+                {data.note && (
+                  <h1 className="text-xl font-bold mt-4">Note {data.note}</h1>
+                )}
                 <ResultsView data={data.answers} />
               </div>
             ))}
