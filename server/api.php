@@ -89,6 +89,11 @@ function handlePostActions($action, $firstParam, $secondParam, $conn)
       }
       postQuestionOption($conn, $firstParam);
       break;
+    case 'archivedQuestion':
+      if ($firstParam) {
+        postArchiveQuestion($conn, $firstParam);
+      }
+      break;
     default:
       echo json_encode(['error' => 'Invalid action', 'action' => $action]);
       break;
@@ -118,8 +123,19 @@ function handleGetActions($action, $firstParam, $secondParam, $conn)
         getAnswersByCode($conn, $firstParam);
       }
       break;
+    case 'user':
+      if ($firstParam) {
+        getUser($conn, $firstParam);
+      }
+      break;
     case 'users':
       getUsers($conn);
+      break;
+
+    case 'archivedQuestionAnswers':
+      if ($firstParam) {
+        getArchivedAnswers($conn, $firstParam);
+      }
       break;
     default:
       echo json_encode(['error' => 'Invalid action', 'action' => $action]);
@@ -436,32 +452,34 @@ function postQuestion($conn)
 
 function getAnswersByCode($conn, $code)
 {
-  // First attempt to retrieve question_id using the code
-  $stmt = $conn->prepare("SELECT question_id FROM Question WHERE code = ?");
+  // First attempt to retrieve question_id and currentVoteStart using the code
+  $stmt = $conn->prepare("SELECT question_id, currentVoteStart FROM Question WHERE code = ?");
   $stmt->bind_param("s", $code);
   $stmt->execute();
   $result = $stmt->get_result();
 
   $question_id = 0;
+  $currentVoteStart = null;
 
   if ($result->num_rows > 0) {
-    // If the question is found using the code, fetch the question_id
     $row = $result->fetch_assoc();
     $question_id = $row['question_id'];
+    $currentVoteStart = $row['currentVoteStart'];
   } else {
-    // If no question is found, assume the code might be the question_id
-    // Check if the code is a numeric value which could be a question_id
     if (is_numeric($code)) {
       $question_id = $code;
-      // Validate whether this numeric code is a valid question_id
-      $validationStmt = $conn->prepare("SELECT 1 FROM Question WHERE question_id = ?");
+      // Validate whether this numeric code is a valid question_id and get currentVoteStart
+      $validationStmt = $conn->prepare("SELECT currentVoteStart FROM Question WHERE question_id = ?");
       $validationStmt->bind_param("i", $question_id);
       $validationStmt->execute();
-      if ($validationStmt->get_result()->num_rows == 0) {
+      $validationResult = $validationStmt->get_result();
+      if ($validationResult->num_rows == 0) {
         echo json_encode(['error' => 'No question found with the provided code']);
         $validationStmt->close();
         return;
       }
+      $row = $validationResult->fetch_assoc();
+      $currentVoteStart = $row['currentVoteStart'];
       $validationStmt->close();
     } else {
       echo json_encode(['error' => 'No question found with the provided code']);
@@ -472,16 +490,26 @@ function getAnswersByCode($conn, $code)
 
   $stmt->close();  // Close the initial statement
 
-  // Now retrieve and count answers for the identified question_id
-  $stmt = $conn->prepare("SELECT answer_string AS name, COUNT(*) AS amount FROM Answer WHERE question_id = ? GROUP BY answer_string");
-  $stmt->bind_param("i", $question_id);
-  $stmt->execute();
-  $result = $stmt->get_result();
-  $answers = $result->fetch_all(MYSQLI_ASSOC);
-
-  echo json_encode($answers);
-  $stmt->close();
+  // Now retrieve and count answers for the identified question_id that were answered after currentVoteStart
+  if ($currentVoteStart) {
+    $stmt = $conn->prepare("
+            SELECT answer_string AS name, COUNT(*) AS amount 
+            FROM Answer 
+            WHERE question_id = ? AND answered_at > ? 
+            GROUP BY answer_string
+        ");
+    $stmt->bind_param("is", $question_id, $currentVoteStart);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $answers = $result->fetch_all(MYSQLI_ASSOC);
+    echo json_encode($answers);
+    $stmt->close();
+  } else {
+    // If there is no currentVoteStart, return an error or empty set
+    echo json_encode(['error' => 'No current voting period found for the given question']);
+  }
 }
+
 
 
 
@@ -737,28 +765,48 @@ function getQuestionOptions($conn, $question_id)
 function updateQuestion($conn, $firstParam)
 {
   $data = json_decode(file_get_contents("php://input"), true);
-  if (!isset($data['question_string']) || !isset($data['question_type']) || !isset($data['topic']) || !isset($data["active"])) {
+  if (!isset($data['question_string'], $data['question_type'], $data['topic'], $data["active"])) {
     http_response_code(400);
     echo json_encode(['error' => 'Missing required fields']);
     return;
   }
 
-  $active = $data['active'];
-  $question_string = $conn->real_escape_string($data['question_string']);
-  $question_type = $conn->real_escape_string($data['question_type']);
-  $topic = $conn->real_escape_string($data['topic']);
+  // Initial SQL and parameters setup
+  $sql = "UPDATE Question SET question_string = ?, question_type = ?, topic = ?, active = ?";
+  $params = [$data['question_string'], $data['question_type'], $data['topic'], $data["active"]];
+  $types = "sssi";  // s for string, i for integer
 
-  $stmt = $conn->prepare("UPDATE Question SET question_string = ?, question_type = ?, topic = ?, active = ? WHERE code = ?");
-  $stmt->bind_param("sssii", $question_string, $question_type, $topic, $active, $firstParam);
+  // Check if currentVoteStart is included and update SQL, types, and params accordingly
+  if (!empty($data['currentVoteStart'])) {
+    $sql .= ", currentVoteStart = ?";
+    $params[] = $data['currentVoteStart'];
+    $types .= "s"; // add 's' for string (assuming currentVoteStart is a datetime string)
+  }
 
+  // Finish SQL with WHERE clause
+  $sql .= " WHERE code = ?";
+  $params[] = $firstParam;
+  $types .= "s"; // Assuming code is a string; change type if code is an integer or other type
+
+  // Prepare and bind parameters
+  $stmt = $conn->prepare($sql);
+  if (false === $stmt) {
+    echo json_encode(['error' => 'Failed to prepare statement']);
+    return;
+  }
+
+  $stmt->bind_param($types, ...$params);
   if ($stmt->execute()) {
-    echo json_encode(['message' => 'Question updated successfully']);
+    echo json_encode(['message' => 'Question updated successfully', 'params' => $params]);
   } else {
-    echo json_encode(['error' => $stmt->error]);
+    echo json_encode(['error' => 'Update failed', 'stmt_error' => $stmt->error]);
   }
 
   $stmt->close();
 }
+
+
+
 
 function deleteQuestion($conn, $code)
 {
@@ -829,65 +877,212 @@ function getActiveQuestion($conn, $code)
   $stmt->close();
 }
 
-function deleteUserAndTokens($conn, $user_id) {
+function deleteUserAndTokens($conn, $user_id)
+{
   if (!$user_id) {
-      echo json_encode(['error' => 'Missing user_id parameter']);
-      return;
+    echo json_encode(['error' => 'Missing user_id parameter']);
+    return;
   }
 
   $conn->begin_transaction();
 
   try {
-      $deleteTokensStmt = $conn->prepare("DELETE FROM refresh_tokens WHERE user_id = ?");
-      $deleteTokensStmt->bind_param("i", $user_id);
-      $deleteTokensStmt->execute();
+    $deleteTokensStmt = $conn->prepare("DELETE FROM refresh_tokens WHERE user_id = ?");
+    $deleteTokensStmt->bind_param("i", $user_id);
+    $deleteTokensStmt->execute();
 
-      if ($deleteTokensStmt->affected_rows > 0) {
-          echo json_encode(['message' => 'Associated tokens deleted']);
-      } else {
-          echo json_encode(['message' => 'No associated tokens found']);
-      }
+    if ($deleteTokensStmt->affected_rows > 0) {
+      echo json_encode(['message' => 'Associated tokens deleted']);
+    } else {
+      echo json_encode(['message' => 'No associated tokens found']);
+    }
 
-      $deleteUserStmt = $conn->prepare("DELETE FROM User WHERE id = ?");
-      $deleteUserStmt->bind_param("i", $user_id);
-      $deleteUserStmt->execute();
+    $deleteUserStmt = $conn->prepare("DELETE FROM User WHERE id = ?");
+    $deleteUserStmt->bind_param("i", $user_id);
+    $deleteUserStmt->execute();
 
-      $conn->commit();
-      echo json_encode(['message' => "User $user_id and associated tokens deleted successfully"]);
+    $conn->commit();
+    echo json_encode(['message' => "User $user_id and associated tokens deleted successfully"]);
   } catch (Exception $e) {
     $conn->rollback();
-      echo json_encode(['error' => "An error occurred: " . $e->getMessage()]);
+    echo json_encode(['error' => "An error occurred: " . $e->getMessage()]);
   } finally {
-      $deleteTokensStmt->close();
-      $deleteUserStmt->close();
+    $deleteTokensStmt->close();
+    $deleteUserStmt->close();
   }
 }
 
 function updateUser($conn, $user_id)
 {
   $data = json_decode(file_get_contents("php://input"), true);
-  if (!isset($data['email']) || !isset($data['password']) || !isset($data['name']) || !isset($data['lastname']) || !isset($data['role'])) {
-      http_response_code(400);
-      echo json_encode(['error' => 'Missing required fields']);
-      return;
+
+  // Check for required fields
+  if (!isset($data['email']) || !isset($data['name']) || !isset($data['lastname'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing required fields', 'data' => $data]);
+    return;
   }
 
+  // Escape necessary data from input
   $email = $conn->real_escape_string($data['email']);
   $name = $conn->real_escape_string($data['name']);
   $lastname = $conn->real_escape_string($data['lastname']);
-  $password = password_hash($data['password'], PASSWORD_DEFAULT);
-  $role = $conn->real_escape_string($data['role']);
 
-  $stmt = $conn->prepare("UPDATE User SET email = ?, password = ? , name = ?, lastname = ?, role = ? WHERE user_id = ?");
-  $stmt->bind_param("ssssi", $email, $password, $name, $lastname, $role, $user_id);
+  // Start building the SQL update query and prepare the binding types and values
+  $query = "UPDATE User SET email = ?, name = ?, lastname = ?";
+  $types = "sss";
+  $values = [&$email, &$name, &$lastname];
 
-  if ($stmt->execute()) {
-      echo json_encode(['message' => 'User updated successfully']);
-  } else {
-      echo json_encode(['error' => $stmt->error]);
+  // Conditional inclusion of password if provided
+  if (isset($data['password'])) {
+    $password = password_hash($data['password'], PASSWORD_DEFAULT);
+    $query .= ", password = ?";
+    $types .= "s";
+    $values[] = &$password;
   }
 
+  // Conditional inclusion of role if provided
+  if (isset($data['role'])) {
+    $role = $conn->real_escape_string($data['role']);
+    $query .= ", role = ?";
+    $types .= "s";
+    $values[] = &$role;
+  }
+
+  // Append the condition for the specific user
+  $query .= " WHERE user_id = ?";
+  $types .= "i";
+  $values[] = &$user_id;
+
+  // Prepare the statement
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param($types, ...$values);
+
+  // Execute the query
+  if ($stmt->execute()) {
+    echo json_encode(['message' => 'User updated successfully']);
+  } else {
+    echo json_encode(['error' => $stmt->error]);
+  }
+
+  // Close the statement
+  $stmt->close();
+}
+
+
+function getUser($conn, $user_id)
+{
+  $stmt = $conn->prepare("SELECT * FROM User WHERE user_id = ?");
+  $stmt->bind_param("i", $user_id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows > 0) {
+    $user = $result->fetch_assoc();
+    echo json_encode($user);
+  } else {
+    echo json_encode(['error' => 'User not found']);
+  }
   $stmt->close();
 }
 
 $conn->close();
+
+
+function postArchiveQuestion($conn, $code)
+{
+  // Set the correct timezone
+  date_default_timezone_set('Europe/Berlin'); // Set this to the timezone of your server or target audience
+
+  // Prepare the SQL statement to fetch question_id and currentVoteStart from Question
+  $selectStmt = $conn->prepare("SELECT question_id, currentVoteStart FROM Question WHERE code = ?");
+  $selectStmt->bind_param("s", $code);  // Assuming 'code' is a string
+  $selectStmt->execute();
+  $result = $selectStmt->get_result();
+
+  if ($result->num_rows === 1) {
+    $row = $result->fetch_assoc();
+    $question_id = $row['question_id'];
+    $currentVoteStart = $row['currentVoteStart'];
+    $selectStmt->close();
+
+    $archived_date = date('Y-m-d H:i:s'); // Get current server time, adjusted by timezone setting
+
+    // Use backticks to escape reserved keywords in column names
+    $insertStmt = $conn->prepare("INSERT INTO ArchivedQuestion (question_id, code, `from`, `to`) VALUES (?, ?, ?, ?)");
+
+    // Bind parameters
+    $insertStmt->bind_param("isss", $question_id, $code, $currentVoteStart, $archived_date);
+
+    // Execute the statement and check for errors
+    if ($insertStmt->execute()) {
+      echo json_encode(['message' => 'Question archived successfully']);
+    } else {
+      echo json_encode(['error' => "Error archiving question: " . $insertStmt->error]);
+    }
+
+    // Close the prepared statement
+    $insertStmt->close();
+  } else {
+    echo json_encode(['error' => "Question not found or multiple entries returned"]);
+    $selectStmt->close();
+  }
+}
+
+
+function getArchivedAnswers($conn, $code)
+{
+  // Array to hold all the results
+  $allArchivedAnswers = [];
+
+  // Check if the question exists using the question_id
+  $validationStmt = $conn->prepare("SELECT question_id FROM Question WHERE code = ?");
+  $validationStmt->bind_param("i", $code);
+  $validationStmt->execute();
+  $result = $validationStmt->get_result();
+
+  if ($result->num_rows == 0) {
+    echo json_encode(['error' => 'No question found with the provided question ID']);
+    $validationStmt->close();
+    return;
+  } else {
+    $row = $result->fetch_assoc();
+    $question_id = $row['question_id'];
+  }
+
+
+  // Now fetch all archived questions (votes) for this question_id
+  $archiveStmt = $conn->prepare("SELECT `from`, `to` FROM ArchivedQuestion WHERE question_id = ?");
+  $archiveStmt->bind_param("i", $question_id);
+  $archiveStmt->execute();
+  $archiveResults = $archiveStmt->get_result();
+
+  // For each archived question, fetch the corresponding answers
+  while ($archiveRow = $archiveResults->fetch_assoc()) {
+    $from = $archiveRow['from'];
+    $to = $archiveRow['to'];
+
+    // Fetch answers that fall within the from and to dates and count them
+    $answersStmt = $conn->prepare("
+            SELECT answer_string AS name, COUNT(*) AS amount 
+            FROM Answer 
+            WHERE question_id = ? AND answered_at BETWEEN ? AND ?
+            GROUP BY answer_string
+        ");
+    $answersStmt->bind_param("iss", $question_id, $from, $to);
+    $answersStmt->execute();
+    $answersResult = $answersStmt->get_result();
+    $answers = $answersResult->fetch_all(MYSQLI_ASSOC);
+    $answersStmt->close();
+
+    // Add these grouped answers to the results
+    $allArchivedAnswers[] = [
+      'from' => $from,
+      'to' => $to,
+      'answers' => $answers
+    ];
+  }
+  $archiveStmt->close();
+
+  // Return all archived answers
+  echo json_encode($allArchivedAnswers);
+}

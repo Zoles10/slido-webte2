@@ -82,6 +82,17 @@ function postAnswer(questionId: string, answer: string) {
   });
 }
 
+function getHistoricAnswers(questionId: string) {
+  return fetch(apiUrl + "archivedQuestionAnswers/" + questionId).then(
+    (response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch answers");
+      }
+      return response.json();
+    }
+  );
+}
+
 export default function Page({ params }: { params: { questionId: string } }) {
   const router = useRouter();
   const [answer, setAnswer] = useState<string>("");
@@ -93,7 +104,6 @@ export default function Page({ params }: { params: { questionId: string } }) {
   const [options, setOptions] = useState<QuestionOption[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [answerList, setAnswerList] = useState([]);
-
 
   const handleCheckboxChange = (optionString: string, isChecked: boolean) => {
     setLoading(true);
@@ -113,14 +123,15 @@ export default function Page({ params }: { params: { questionId: string } }) {
 
   useEffect(() => {
     setLoading(true);
-  
+
     // Defining an async function inside useEffect
     const fetchData = async () => {
       try {
         // Fetching answers
         const answerData = await getAnswers(params.questionId);
         let processedAnswers = [];
-  
+        const historicalAnswers = await getHistoricAnswers(params.questionId);
+
         if (questionType === "multiple_choice") {
           const answerCounts = new Map();
           answerData.forEach((item: any) => {
@@ -130,21 +141,21 @@ export default function Page({ params }: { params: { questionId: string } }) {
           });
           processedAnswers = Array.from(answerCounts, ([name, amount]) => ({
             name,
-            amount
+            amount,
           }));
           console.log("processedAnswers:", processedAnswers);
         } else {
           processedAnswers = answerData; // Assuming 'answerData' already structured as needed
         }
         setAnswerList(processedAnswers);
-  
+
         // Fetching question data and options if needed
         const data = await getDataQuestion(params.questionId);
         console.log("Data:", data);
         setData(data);
         setQuestion(data.question_string);
         setQuestionType(data.question_type);
-  
+
         if (data.question_type === "multiple_choice") {
           const options = await getQuestionOptions(data.question_id);
           console.log("Options:", options);
@@ -157,11 +168,10 @@ export default function Page({ params }: { params: { questionId: string } }) {
         setLoading(false); // Ensure loading is set to false after all operations
       }
     };
-  
+
     // Call the async function
     fetchData();
   }, [params.questionId, questionType]); // Ensure all dependencies are listed
-  
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -180,7 +190,6 @@ export default function Page({ params }: { params: { questionId: string } }) {
       });
   };
 
-  
   return (
     <div>
       <header className="flex justify-between items-center w-full p-2">
@@ -193,7 +202,10 @@ export default function Page({ params }: { params: { questionId: string } }) {
       </header>
       <main className="flex flex-col p-2 items-center">
         <TypographyH2>{question}</TypographyH2>
-        <ExportQuestionButton questionData={data} questionOptions={answerList} />
+        <ExportQuestionButton
+          questionData={data}
+          questionOptions={answerList}
+        />
         <form onSubmit={handleSubmit}>
           {data?.question_type === "open_end" && (
             <Input
