@@ -15,10 +15,10 @@ import { Loader2 } from "lucide-react";
 export default function Home() {
   const { user, isAdmin } = useAuth();
   return (
-    <>
-      <header className="flex justify-between items-center w-full p-2">
+    <div className="h-screen">
+      <header className="flex flex-col sm:flex-row justify-between items-center w-full p-2 ">
         <Logo />
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mt-4 flex-wrap items-center justify-center">
           <LanguageSwitcher />
           <ModeToggle />
           <NavigateButton />
@@ -27,7 +27,7 @@ export default function Home() {
           <LogoutButton />
         </div>
       </header>
-      <main className="flex min-h-screen flex-col items-center justify-center  space-y-10">
+      <main className="flex  flex-col items-center justify-center  space-y-10 mt-auto mb-auto">
         {user ? (
           <div className="flex flex-row">
             <h1 className="text-2xl font-bold">
@@ -57,6 +57,6 @@ export default function Home() {
           <Search />
         </div>
       </main>
-    </>
+    </div>
   );
 }

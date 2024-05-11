@@ -11,6 +11,9 @@ import { apiUrl } from "@/utils/config";
 import { useRouter } from "next/navigation";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
 import ExportQuestionButton from "@/components/ui/exportQuestionButton";
+import { Loader2 } from "lucide-react";
+import { FormattedMessage } from "react-intl";
+import { Checkbox } from "@/components/ui/checkbox";
 
 async function getAnswers(questionId: string) {
   return fetch(apiUrl + "answer/" + questionId).then((response) => {
@@ -122,8 +125,6 @@ export default function Page({ params }: { params: { questionId: string } }) {
 
   useEffect(() => {
     setLoading(true);
-
-    // Defining an async function inside useEffect
     const fetchData = async () => {
       try {
         // Fetching answers
@@ -190,66 +191,93 @@ export default function Page({ params }: { params: { questionId: string } }) {
   };
 
   return (
-    <div>
-      <header className="flex justify-between items-center w-full p-2">
+    <div className="h-screen">
+      <header className="flex flex-col sm:flex-row justify-between items-center w-full p-2">
         <Logo />
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mt-4 sm:mt-0">
           <LanguageSwitcher />
           <ModeToggle />
           <LogoutButton />
         </div>
       </header>
-      <main className="flex flex-col p-2 items-center">
-        <TypographyH2>{question}</TypographyH2>
-        <ExportQuestionButton
-          questionData={data}
-          questionOptions={answerList}
-        />
-        <form onSubmit={handleSubmit}>
-          {data?.question_type === "open_end" && (
-            <Input
-              type="text"
-              placeholder="Answer"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              disabled={loading}
-            />
-          )}
-          {data?.question_type === "multiple_choice" &&
-            !options.message &&
-            options?.map((option) => (
-              <div key={option.question_option_id}>
-                <input
-                  type="checkbox"
-                  id={String(option.question_option_id)}
-                  onChange={(e) =>
-                    handleCheckboxChange(option.option_string, e.target.checked)
-                  }
-                  disabled={loading}
-                />
-                <label htmlFor={String(option.question_option_id)}>
-                  {option.option_string}
-                </label>
-              </div>
-            ))}
-          <Button
-            type="submit"
-            style={{ marginTop: "1rem", marginBottom: "1rem" }}
-            disabled={loading}
-          >
-            {loading ? "Submitting..." : "Submit Answer"}
-          </Button>
-          {error && <Paragraph className="text-red-500">{error}</Paragraph>}
-        </form>
-        <Link href={`/${params.questionId}/results`}>
-          <Button>Go to results</Button>
-        </Link>
-        <div className="mt-4 text-center">
-          <Link href="/home" legacyBehavior>
-            <a className="text-orange-500 hover:underline">Domov</a>
-          </Link>
+      {loading ? (
+        <div className="flex flex-col items-center">
+          {" "}
+          <h1>
+            <FormattedMessage id="loadingQuestion" />
+          </h1>
+          <Loader2 />{" "}
         </div>
-      </main>
+      ) : (
+        <main className="flex flex-col p-2 items-center justify-center">
+          <TypographyH2>{question}</TypographyH2>
+
+          <form onSubmit={handleSubmit} className="flex flex-col items-center">
+            {data?.question_type === "open_end" && (
+              <Input
+                type="text"
+                placeholder="Answer"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                disabled={loading}
+              />
+            )}
+            <div className="flex flex-col px-10 mt-5">
+              {data?.question_type === "multiple_choice" &&
+                !options.message &&
+                options?.map((option) => (
+                  <div
+                    key={option.question_option_id}
+                    className="flex flex-row mb-5 items-center justify-start"
+                  >
+                    <Checkbox
+                      id={String(option.question_option_id)}
+                      // checked={field.value}
+                      onCheckedChange={(checked: any) =>
+                        handleCheckboxChange(option.option_string, checked)
+                      }
+                      className="w-7 h-7 mr-2"
+                      disabled={loading}
+                    />
+                    <label htmlFor={String(option.question_option_id)}>
+                      {option.option_string}
+                    </label>
+                  </div>
+                ))}
+            </div>
+            <Button
+              type="submit"
+              style={{ marginTop: "1rem", marginBottom: "1rem" }}
+              disabled={loading}
+            >
+              {loading ? (
+                <FormattedMessage id="submitting" />
+              ) : (
+                <FormattedMessage id="submit" />
+              )}
+            </Button>
+            {error && <Paragraph className="text-red-500">{error}</Paragraph>}
+          </form>
+          <div className="flex flex-row items-center">
+            <Link href={`/${params.questionId}/results`}>
+              <Button className="mr-4">
+                <FormattedMessage id="goToResults" />
+              </Button>
+            </Link>
+            <ExportQuestionButton
+              questionData={data}
+              questionOptions={answerList}
+            />
+          </div>
+          <div className="mt-4 text-center">
+            <Link href="/home" legacyBehavior>
+              <a className="text-orange-500 hover:underline">
+                <FormattedMessage id="home" />
+              </a>
+            </Link>
+          </div>
+        </main>
+      )}
     </div>
   );
 }

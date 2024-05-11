@@ -44,5 +44,13 @@
   "selectType": "Select type",
   "copy": "Copy",
   "note": "Note",
+  "goToResults": "Go to results",
+  "submit": "Submit",
+  "loadingQuestion": "Loading question...",
+  "submitting": "Submitting...",
+  "exportQuestion": "Export question",
+  "poll": "Poll results",
+  "From": "From",
+  "To": "To",
   "filterTopic": "Filter by topic..."
 }

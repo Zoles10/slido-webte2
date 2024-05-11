@@ -35,7 +35,7 @@ export default function MyQuestions({
           <LogoutButton />
         </div>
       </header>
-      <main className="flex min-h-screen flex-col items-center justify-center p-24 ">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-24 ">
         <div className="w-full max-w-2xl p-8 shadow-lg rounded-lg">
           {isAdmin && <QuestionsSwitch all={searchParams.all === "true"} />}
 

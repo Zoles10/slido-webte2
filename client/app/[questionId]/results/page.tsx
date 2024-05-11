@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { apiUrl } from "@/utils/config";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
+import { FormattedMessage } from "react-intl";
 
 async function getDataQuestion(questionId: string) {
   const response = await fetch(apiUrl + "question/" + questionId);
@@ -63,6 +64,20 @@ export default function ResultsPage({
   const [historicData, setHistoricData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const processAnswers = (answers: any) => {
+    const answerCounts = new Map();
+    answers.forEach((answer: any) => {
+      const colors = answer.name.split(";");
+      colors.forEach((color: any) => {
+        answerCounts.set(color, (answerCounts.get(color) || 0) + answer.amount);
+      });
+    });
+    return Array.from(answerCounts, ([name, amount]) => ({
+      name,
+      amount,
+    }));
+  };
+
   useEffect(() => {
     async function loadResults() {
       try {
@@ -72,13 +87,14 @@ export default function ResultsPage({
 
         setApiData(questionData);
 
-        setCurrentAnswers(currentAnswersData);
+        // Process current answers
+        const processedCurrentAnswers = processAnswers(currentAnswersData);
+        setCurrentAnswers(processedCurrentAnswers);
 
         const processedHistoricData = historicalAnswers.map((period) => ({
           from: period.from,
           to: period.to,
-          answers: period.answers,
-          note: period.note,
+          answers: processAnswers(period.answers),
         }));
 
         setHistoricData(processedHistoricData);
@@ -91,11 +107,16 @@ export default function ResultsPage({
     loadResults();
   }, [params.questionId]);
 
+  function formatTimestamp(timestamp: any) {
+    const date = new Date(timestamp);
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+  }
+
   return (
     <div>
-      <header className="flex justify-between items-center w-full p-2">
+      <header className="flex flex-col sm:flex-row justify-between items-center w-full p-2">
         <Logo />
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mt-4">
           <LanguageSwitcher />
           <ModeToggle />
           <LogoutButton />
@@ -111,8 +132,19 @@ export default function ResultsPage({
             <ResultsView data={currentAnswers} title="Current Voting Results" />
             {historicData.map((data, index) => (
               <div key={index}>
-                <h1 className="text-xl font-bold mt-4">
-                  {data.from} to {data.to}
+                <h1 className="text-3xl font-bold mt-4">
+                  <FormattedMessage id="poll" />
+                  {" " + (index + 1)}
+                </h1>
+                <h1 className="text-xl font-bold mt-2">
+                  <div className="text-orange-500">
+                    <FormattedMessage id="from" />
+                  </div>
+                  {formatTimestamp(data.from)}{" "}
+                  <div className="text-orange-500">
+                    <FormattedMessage id="to" />
+                  </div>{" "}
+                  {formatTimestamp(data.to)}
                 </h1>
                 {data.note && (
                   <h1 className="text-xl font-bold mt-4">Note {data.note}</h1>

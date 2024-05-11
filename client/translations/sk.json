@@ -45,5 +45,13 @@
   "copy": "Kopírovať",
   "note": "Poznámka",
   "updateQuestionInfo": "Aktualizujte informácie o otázke",
+  "goToResults": "Prejsť na výsledky",
+  "submittingAnswer": "Odosielanie odpovede ...",
+  "loadingQuestion": "Načítavanie otázky ...",
+  "submit": "Odoslať odpoveď",
+  "exportQuestion": "Exportovať otázku",
+  "poll": "Výsledky ankety",
+  "from": "Od",
+  "to": "Do",
   "edit": "Upraviť"
 }
