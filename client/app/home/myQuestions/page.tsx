@@ -27,9 +27,9 @@ export default function MyQuestions({
   const { isAdmin } = useAuth();
   return (
     <>
-      <header className="flex justify-between items-center w-full p-2">
+      <header className="flex justify-between items-center w-full p-2 flex-col sm:flex-row">
         <Logo />
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mt-4">
           <LanguageSwitcher />
           <ModeToggle />
           <LogoutButton />
