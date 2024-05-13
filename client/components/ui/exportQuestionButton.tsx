@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import CloudDownloadIcon from "@material-ui/icons/CloudDownload"; // There is no simple 'Download' icon
 import { FormattedMessage } from "react-intl";
+import { ArrowDownToLine } from "lucide-react";
 
 type ExportProps = {
   questionData: any; // Use a more specific type depending on the structure of your data
@@ -41,7 +41,7 @@ const ExportQuestionButton: React.FC<ExportProps> = ({
 }) => {
   return (
     <Button onClick={() => downloadCSV(questionData, questionOptions)} clas>
-      <CloudDownloadIcon className="mr-2" />
+      <ArrowDownToLine className="mr-2" />
       <FormattedMessage id="exportQuestion" />
     </Button>
   );
