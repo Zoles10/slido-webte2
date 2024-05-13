@@ -9,13 +9,13 @@ type ExportProps = {
   questionOptions: any[];
 };
 
-const downloadCSV = (questionData, questionOptions) => {
+const downloadCSV = (questionData: any, questionOptions: any) => {
   // Extract the question string from questionData
   const { question_string: question } = questionData;
 
   // Start the CSV content with headers
   let csvContent = '"Question";"Answers";"Amount"\n';
-  questionOptions.forEach((option, index) => {
+  questionOptions.forEach((option: any, index: number) => {
     if (index === 0) {
       csvContent += `"${question}";"${option.name}";${option.amount}\n`;
     } else {
@@ -40,7 +40,7 @@ const ExportQuestionButton: React.FC<ExportProps> = ({
   questionOptions,
 }) => {
   return (
-    <Button onClick={() => downloadCSV(questionData, questionOptions)} clas>
+    <Button onClick={() => downloadCSV(questionData, questionOptions)}>
       <ArrowDownToLine className="mr-2" />
       <FormattedMessage id="exportQuestion" />
     </Button>

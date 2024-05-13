@@ -20,14 +20,12 @@ import { FormattedMessage } from "react-intl";
 import { useRouter } from "next/navigation";
 
 // Define schema with Zod
-const userFormSchema = z
-  .object({
-    name: z.string().min(1, { message: "Name is required" }),
-    lastname: z.string().min(1, { message: "Last name is required" }),
-    email: z.string().email(),
-    role: z.string().min(1, { message: "Role is required" }),
-  })
-
+const userFormSchema = z.object({
+  name: z.string().min(1, { message: "Name is required" }),
+  lastname: z.string().min(1, { message: "Last name is required" }),
+  email: z.string().email(),
+  role: z.string().min(1, { message: "Role is required" }),
+});
 
 interface UserFormProps {
   initialData?: {
@@ -37,13 +35,17 @@ interface UserFormProps {
     user_id: string;
     role: string;
   };
-  isEditMode: boolean;
+  isEditMode?: boolean;
   userId?: string;
 }
 
-export default function UserForm({ initialData, isEditMode, userId }: UserFormProps) {
+export default function UserForm({
+  initialData,
+  isEditMode,
+  userId,
+}: UserFormProps) {
   const router = useRouter();
-  console.log(initialData, ' initialData');
+  console.log(initialData, " initialData");
 
   // Initialize the form with schema and default values
   const form = useForm({
@@ -59,7 +61,9 @@ export default function UserForm({ initialData, isEditMode, userId }: UserFormPr
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
     const method = isEditMode ? "PUT" : "POST";
-    const endpoint = isEditMode ? `${apiUrl}user/${initialData.user_id}` : `${apiUrl}register`;
+    const endpoint = isEditMode
+      ? `${apiUrl}user/${initialData?.user_id}`
+      : `${apiUrl}register`;
 
     try {
       const response = await fetch(endpoint, {
@@ -183,12 +187,18 @@ export default function UserForm({ initialData, isEditMode, userId }: UserFormPr
                     <option value="admin">Admin</option>
                     <option value="user">User</option>
                   </Select>
-            </FormItem>
-          )}
-        />
-            <Button type="submit">{isEditMode ? "Update User" : "Register"}</Button>
+                </FormItem>
+              )}
+            />
+            <Button type="submit">
+              {isEditMode ? "Update User" : "Register"}
+            </Button>
             {isEditMode && (
-              <Button type="button" onClick={handleDelete} className="bg-red-500">
+              <Button
+                type="button"
+                onClick={handleDelete}
+                className="bg-red-500"
+              >
                 Delete User
               </Button>
             )}

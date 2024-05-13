@@ -38,19 +38,19 @@ async function getHistoricAnswers(questionId: string) {
   return response.json();
 }
 
-const processAnswers = (answers) => {
-  console.log(answers);
-  const answerCounts = new Map();
-  answers.forEach((item) => {
-    item.name.split(";").forEach((answer) => {
-      answerCounts.set(answer, (answerCounts.get(answer) || 0) + 1);
-    });
-  });
-  return Array.from(answerCounts, ([name, amount]) => ({
-    name,
-    amount,
-  }));
-};
+// const processAnswers = (answers: any) => {
+//   console.log(answers);
+//   const answerCounts = new Map();
+//   answers.forEach((item: any) => {
+//     item.name.split(";").forEach((answer: any) => {
+//       answerCounts.set(answer, (answerCounts.get(answer) || 0) + 1);
+//     });
+//   });
+//   return Array.from(answerCounts, ([name, amount]) => ({
+//     name,
+//     amount,
+//   }));
+// };
 
 export default function ResultsPage({
   params,
@@ -59,7 +59,7 @@ export default function ResultsPage({
   params: { questionId: string };
   searchParams: URLSearchParams;
 }) {
-  const [apiData, setApiData] = useState(null);
+  const [apiData, setApiData] = useState<any>(null);
   const [currentAnswers, setCurrentAnswers] = useState([]);
   const [historicData, setHistoricData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,11 +87,10 @@ export default function ResultsPage({
 
         setApiData(questionData);
 
-        // Process current answers
-        const processedCurrentAnswers = processAnswers(currentAnswersData);
+        const processedCurrentAnswers: any = processAnswers(currentAnswersData);
         setCurrentAnswers(processedCurrentAnswers);
 
-        const processedHistoricData = historicalAnswers.map((period) => ({
+        const processedHistoricData = historicalAnswers.map((period: any) => ({
           from: period.from,
           to: period.to,
           answers: processAnswers(period.answers),
@@ -129,8 +128,8 @@ export default function ResultsPage({
         {!loading && apiData ? (
           <>
             <h1 className="text-xl font-bold mt-4">Current results</h1>
-            <ResultsView data={currentAnswers} title="Current Voting Results" />
-            {historicData.map((data, index) => (
+            <ResultsView data={currentAnswers} />
+            {historicData.map((data: any, index) => (
               <div key={index}>
                 <h1 className="text-3xl font-bold mt-4">
                   <FormattedMessage id="poll" />

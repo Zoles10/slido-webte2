@@ -15,7 +15,13 @@ export default function EditUser({ params }: { params: { code: string } }) {
   const code = params.code;
   console.log(code);
 
-  const [initialData, setInitialData] = useState(null);
+  const [initialData, setInitialData] = useState<any>({
+    name: "",
+    lastname: "",
+    email: "",
+    active: "true",
+    role: "user",
+  });
 
   useEffect(() => {
     if (code) {
@@ -48,11 +54,7 @@ export default function EditUser({ params }: { params: { code: string } }) {
           <Paragraph className="mb-5">
             <FormattedMessage id={"updateQuestionInfo"} />
           </Paragraph>
-          <AdminAddUserForm
-            initialData={initialData}
-            isEditMode={true}
-            code={code}
-          />
+          <AdminAddUserForm initialData={initialData} isEditMode={true} />
           <Link
             href="/home"
             className="mt-4 text-center text-orange-500 hover:underline cursor-pointer"

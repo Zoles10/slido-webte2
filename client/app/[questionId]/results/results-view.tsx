@@ -4,7 +4,7 @@ import WordCloud from "@/components/ui/word-cloud";
 import { DataTable } from "./data-table";
 import { columns, Result } from "./columns";
 
-export default function ResultsView({ data }) {
+export default function ResultsView({ data }: { data: Result[] }) {
   const [showCloud, setShowCloud] = useState(false);
   const [cloudWidth, setCloudWidth] = useState(window.innerWidth * 0.8); // 80% of the screen width
   const [couldHeight, setCloudHeight] = useState(window.innerHeight * 0.4); // 500px

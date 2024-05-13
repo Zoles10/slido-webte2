@@ -63,11 +63,20 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
   useEffect(() => {
     const loadUsers = async () => {
       let fetchedUsers = await fetchUsers();
-      fetchedUsers = fetchedUsers.filter(user => {
-        const nameMatch = user.name.toLowerCase().includes(nameFilter.toLowerCase());
-        const lastNameMatch = user.lastname.toLowerCase().includes(lastNameFilter.toLowerCase());
-        const emailMatch = user.email.toLowerCase().includes(emailFilter.toLowerCase());
-        const dateMatch = dateFilter ? new Date(user.created_at).toLocaleDateString() === new Date(dateFilter).toLocaleDateString() : true;
+      fetchedUsers = fetchedUsers.filter((user) => {
+        const nameMatch = user.name
+          .toLowerCase()
+          .includes(nameFilter.toLowerCase());
+        const lastNameMatch = user.lastname
+          .toLowerCase()
+          .includes(lastNameFilter.toLowerCase());
+        const emailMatch = user.email
+          .toLowerCase()
+          .includes(emailFilter.toLowerCase());
+        const dateMatch = dateFilter
+          ? new Date(user.created_at).toLocaleDateString() ===
+            new Date(dateFilter).toLocaleDateString()
+          : true;
 
         return nameMatch && lastNameMatch && emailMatch && dateMatch;
       });
@@ -87,7 +96,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
     let items = [];
     for (let number = 1; number <= totalPages; number++) {
       items.push(
-        <PaginationItem key={number} active={number === currentPage}>
+        <PaginationItem key={number}>
           <PaginationLink onClick={() => setCurrentPage(number)}>
             {number}
           </PaginationLink>
@@ -99,14 +108,14 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
       <Pagination>
         <PaginationPrevious
           onClick={() => setCurrentPage(currentPage - 1)}
-          disabled={currentPage <= 1}
+          // disabled={currentPage <= 1}
         >
           Previous
         </PaginationPrevious>
         <PaginationContent>{items}</PaginationContent>
         <PaginationNext
           onClick={() => setCurrentPage(currentPage + 1)}
-          disabled={currentPage >= totalPages}
+          // disabled={currentPage >= totalPages}
         >
           Next
         </PaginationNext>
@@ -116,7 +125,14 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", marginTop: "20px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "20px",
+          marginTop: "20px",
+        }}
+      >
         <Input
           type="text"
           placeholder="Filter by name"
@@ -176,7 +192,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ all, itemsPerPage = 10 }) => {
                   {new Date(user.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                <Button
+                  <Button
                     onClick={() =>
                       router.push(`/home/createUser/${user.user_id}`)
                     }

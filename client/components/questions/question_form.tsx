@@ -38,28 +38,46 @@ export default function QuestionForm({
   initialData,
   isEditMode,
 }: {
-  code: string;
-  initialData: any;
-  isEditMode: boolean;
+  code?: string;
+  initialData?: any;
+  isEditMode?: boolean;
 }) {
   const { user, isAdmin } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState([]);
-  const [deletedOptions, setDeletedOptions] = useState([]);
+  const [deletedOptions, setDeletedOptions] = useState<any>([]);
   const [showNote, setShowNote] = useState(false);
 
-  const form = useForm({
+  type Option = {
+    option_string: string;
+    isCorrect: boolean;
+  };
+
+  type FormSchema = {
+    question_string: string;
+    question_type: string;
+    topic: string;
+    active: string;
+    options: Option[];
+    user_id: string | number | undefined;
+    currentVoteStart: string;
+    note: string;
+  };
+
+  const form = useForm<FormSchema>({
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
       question_string: initialData?.question_string || "",
       question_type: initialData?.question_type || "",
       topic: initialData?.topic || "",
       active: initialData?.active ? "true" : "false",
-      options: [{ option: "", isCorrect: false }],
+      options: initialData?.options || [],
       user_id: isAdmin ? user?.id : user?.id || "",
       currentVoteStart: initialData?.currentVoteStart || "",
+      note: initialData?.note || "",
     },
   });
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "options",
@@ -96,7 +114,7 @@ export default function QuestionForm({
       ...form.getValues(),
       ...initialData,
       options: (!initialData?.options?.message
-        ? initialData?.options?.map((option) => ({
+        ? initialData?.options?.map((option: any) => ({
             option_string: option.option_string,
             correct: option.correct === 1,
             question_option_id: option.question_option_id,
@@ -106,18 +124,18 @@ export default function QuestionForm({
   }, [initialData, form]);
 
   // Modify the useEffect that handles user fetching to also fetch options if needed
-  const handleRemoveOption = (index) => {
-    const option = fields[index];
+  const handleRemoveOption = (index: number) => {
+    const option: any = fields[index];
     if (option.question_option_id) {
       // Check if the option has an ID
-      setDeletedOptions((prev) => [...prev, option.question_option_id]);
+      setDeletedOptions((prev: any) => [...prev, option.question_option_id]);
     }
     remove(index);
   };
 
   const processDeletions = async () => {
     await Promise.all(
-      deletedOptions.map(async (optionId) => {
+      deletedOptions.map(async (optionId: string) => {
         const deleteEndpoint = `${apiUrl}questionOption/${optionId}`;
         try {
           const response = await fetch(deleteEndpoint, {
@@ -137,12 +155,12 @@ export default function QuestionForm({
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const values = form.getValues();
+    const values: any = form.getValues();
     values.active = values.active === "true";
 
     try {
       await processDeletions();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing form:", error);
       form.setError("root", { type: "manual", message: error.message });
       return;
@@ -194,18 +212,18 @@ export default function QuestionForm({
       }
 
       router.push("/home/myQuestions");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Submission error:", error);
       form.setError("root", { type: "manual", message: error.message });
     }
   };
 
-  const handleOptionSubmit = async (questionId) => {
+  const handleOptionSubmit = async (questionId: any) => {
     const options = form.getValues().options;
     console.log("Options to submit:", options);
 
     await Promise.all(
-      options.map(async (option) => {
+      options.map(async (option: any) => {
         // Determine the endpoint and HTTP method based on whether an option ID is present
         const isUpdate = Boolean(option.question_option_id);
         const optionEndpoint =
@@ -245,7 +263,7 @@ export default function QuestionForm({
     );
   };
 
-  const archiveQuestion = async (questionCode: string) => {
+  const archiveQuestion = async (questionCode: string | undefined) => {
     try {
       const archiveEndpoint = `${apiUrl}archivedQuestion/${questionCode}`;
       const archiveResponse = await fetch(archiveEndpoint, {
@@ -330,12 +348,12 @@ export default function QuestionForm({
               />
               <input
                 type="checkbox"
-                checked={field.correct}
+                checked={field.isCorrect}
                 onChange={(e) => {
                   const newOptions = [...fields];
                   newOptions[index] = {
                     ...newOptions[index],
-                    correct: e.target.checked,
+                    isCorrect: e.target.checked,
                   };
                   form.setValue("options", newOptions); // Update the options in the form
                 }}
@@ -355,7 +373,7 @@ export default function QuestionForm({
         {form.watch("question_type") === "multiple_choice" && (
           <Button
             type="button"
-            onClick={() => append({ option: "", isCorrect: false })}
+            onClick={() => append({ option_string: "", isCorrect: false })}
           >
             <FormattedMessage id="addOption" />
           </Button>

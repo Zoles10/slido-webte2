@@ -49,11 +49,11 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
   const { user, isAdmin } = useAuth();
   const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [textFilter, setTextFilter] = useState("");
-  const [topicFilter, setTopicFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [textFilter, setTextFilter] = useState<string>("");
+  const [topicFilter, setTopicFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("");
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -120,7 +120,7 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
     let items = [];
     for (let number = 1; number <= totalPages; number++) {
       items.push(
-        <PaginationItem key={number} active={number === currentPage}>
+        <PaginationItem key={number}>
           <PaginationLink onClick={() => setCurrentPage(number)}>
             {number}
           </PaginationLink>
@@ -132,14 +132,14 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
       <Pagination>
         <PaginationPrevious
           onClick={() => setCurrentPage(currentPage - 1)}
-          disabled={currentPage <= 1}
+          // disabled={currentPage <= 1}
         >
           Previous
         </PaginationPrevious>
         <PaginationContent>{items}</PaginationContent>
         <PaginationNext
           onClick={() => setCurrentPage(currentPage + 1)}
-          disabled={currentPage >= totalPages}
+          // disabled={currentPage >= totalPages}
         >
           Next
         </PaginationNext>
@@ -209,16 +209,19 @@ const QuestionTable: React.FC<QuestionTableProps> = ({
                 </TableCell>
                 <TableCell>{question.code}</TableCell>
                 <TableCell>
-                  <Button
-                    onClick={() =>
-                      router.push(`/home/createQuestion/${question.code}`)
-                    }
-                  >
-                    <FormattedMessage id="edit" />
-                  </Button>
-                  <Button onClick={() => createCopyQuestion(question.code)}>
-                    <FormattedMessage id="copy" />
-                  </Button>
+                  <div className="flex flex-row">
+                    <Button
+                      className="mr-1"
+                      onClick={() =>
+                        router.push(`/home/createQuestion/${question.code}`)
+                      }
+                    >
+                      <FormattedMessage id="edit" />
+                    </Button>
+                    <Button onClick={() => createCopyQuestion(question.code)}>
+                      <FormattedMessage id="copy" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

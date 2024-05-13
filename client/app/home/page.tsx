@@ -18,7 +18,7 @@ export default function Home() {
     <div className="h-screen">
       <header className="flex flex-col sm:flex-row justify-between items-center w-full p-2 ">
         <Logo />
-        <div className="flex space-x-4 mt-4 flex-wrap items-center justify-center">
+        <div className="flex space-x-1 mt-4 flex-wrap items-center justify-center">
           <LanguageSwitcher />
           <ModeToggle />
           <NavigateButton />

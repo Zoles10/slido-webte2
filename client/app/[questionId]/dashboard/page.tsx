@@ -23,7 +23,7 @@ export default function Home({ params }: any) {
           topic: data.topic,
         });
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message);
         setLoading(false);
       }

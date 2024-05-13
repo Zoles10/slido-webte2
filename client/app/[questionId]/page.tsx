@@ -29,6 +29,7 @@ type QuestionOption = {
   question_id: number;
   option_string: string;
   correct: boolean;
+  message: string;
 };
 
 type QuestionData = {
@@ -224,7 +225,6 @@ export default function Page({ params }: { params: { questionId: string } }) {
             )}
             <div className="flex flex-col px-10 mt-5">
               {data?.question_type === "multiple_choice" &&
-                !options.message &&
                 options?.map((option) => (
                   <div
                     key={option.question_option_id}

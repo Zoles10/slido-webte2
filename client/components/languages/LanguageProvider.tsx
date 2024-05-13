@@ -2,16 +2,14 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { IntlProvider } from "react-intl";
 
-// Create a context
-const LanguageContext = createContext(null);
+const LanguageContext = createContext<any>(null);
 
-// Context provider component
-function LanguageProvider({ children }) {
-  const [locale, setLocale] = useState("en");
+function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [locale, setLocale] = useState<string>("en");
   const [messages, setMessages] = useState({});
 
   useEffect(() => {
-    const loadLocaleData = async (locale) => {
+    const loadLocaleData = async (locale: any) => {
       const messages = await import(`../../translations/${locale}.json`);
       setMessages(messages.default);
     };
@@ -19,7 +17,7 @@ function LanguageProvider({ children }) {
     loadLocaleData(locale);
   }, [locale]);
 
-  const changeLanguage = (lang) => {
+  const changeLanguage = (lang: any) => {
     setLocale(lang);
   };
 
