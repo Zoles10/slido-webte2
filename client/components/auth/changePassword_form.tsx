@@ -53,8 +53,8 @@ export default function ChangePasswordForm() {
     try {
       const result = await changePassword(values.oldPassword, values.newPassword);
       console.log(result);
-      // Redirect or show success message
-      // router.push("/profile");
+      //Redirect or show success message
+        router.push("/profile");
     } catch (error) {
       console.error("Error changing password:", error);
       // Handle error (show error message to user)
