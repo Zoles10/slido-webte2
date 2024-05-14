@@ -615,6 +615,9 @@ function getQuestionByCode($conn, $code)
 //change password function
 function changePassword($conn)
 {
+  $inputJSON = file_get_contents('php://input');
+  $input = json_decode($inputJSON, TRUE);
+  
   if (!isset($_POST['username']) || !isset($_POST['new_password'])) {
     echo json_encode(['error' => 'Missing username or new password']);
     exit;
