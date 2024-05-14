@@ -617,14 +617,13 @@ function changePassword($conn)
 {
   $inputJSON = file_get_contents('php://input');
   $input = json_decode($inputJSON, TRUE);
-  
-  if (!isset($_POST['username']) || !isset($_POST['new_password'])) {
+  if (!isset($input['username']) || !isset($input['new_password'])) {
     echo json_encode(['error' => 'Missing username or new password']);
     exit;
   }
 
-  $username = $conn->real_escape_string($_POST['username']);
-  $newPassword = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+  $username = $conn->real_escape_string($input['username']);
+  $newPassword = password_hash($input['new_password'], PASSWORD_DEFAULT);
 
   $stmt = $conn->prepare("SELECT * FROM User WHERE email = ?");
   $stmt->bind_param("s", $username);
