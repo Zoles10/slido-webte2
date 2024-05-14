@@ -1,3 +1,3 @@
-FROM php:7.4-apache
-COPY . /var/www/html/
+FROM php:8.3-fpm
+# COPY . /var/www/html/
 RUN docker-php-ext-install mysqli

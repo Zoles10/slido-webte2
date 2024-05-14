@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
+import axios from "axios";
 
 export default function Search() {
   const [isSearching, setIsSearching] = useState(false);
@@ -16,10 +17,12 @@ export default function Search() {
     setIsSearching(true);
 
     try {
-      // Replace the URL with your API endpoint and include the ID in the query
       const response = await fetch(
-        `https://node98.webte.fei.stuba.sk/slido-webte2/server/api/activeQuestion/${value}`
+        `https://localhost/api/activeQuestion/${value}`
       );
+      // const response = await axios.get(
+      //   `https://localhost/api/activeQuestion/${value}`
+      // );
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }

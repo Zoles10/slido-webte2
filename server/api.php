@@ -14,14 +14,14 @@ use Firebase\JWT\Key;
 
 function sendCORSHeaders()
 {
-  header("Access-Control-Allow-Origin: http://localhost:3000");
-  header("Access-Control-Allow-Credentials: true");
-  header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-  header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+  // header("Access-Control-Allow-Origin: *");
+  // header("Access-Control-Allow-Credentials: true");
+  // header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+  // header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-  if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
-    exit(0);
-  }
+  // if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
+  //   exit(0);
+  // }
 }
 
 sendCORSHeaders();
@@ -29,15 +29,15 @@ sendCORSHeaders();
 $requestPath = trim(parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH), '/');
 $pathParts = explode('/', $requestPath);
 
-if (count($pathParts) < 4) {
-  echo json_encode(['error' => 'No action specified']);
+if (count($pathParts) < 2) {
+  echo json_encode(['error' => 'No action specified' . $requestPath, 'parts' => $pathParts]);
   exit;
 }
 
-$apiPrefix = $pathParts[2];
-$action = $pathParts[3];
-$firstParam = $pathParts[4] ?? null;
-$secondParam = $pathParts[5] ?? null;
+$apiPrefix = $pathParts[0];
+$action = $pathParts[1];
+$firstParam = $pathParts[2] ?? null;
+$secondParam = $pathParts[3] ?? null;
 
 if ($apiPrefix !== 'api') {
   http_response_code(404);
