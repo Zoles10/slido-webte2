@@ -35,7 +35,6 @@
   "addUser": "Pridať používateľa",
   "filterText": "Filtrovať názov ...",
   "filterTopic": "Filtrovať predmet ...",
-<<<<<<< HEAD
   "editQuestion": "Upraviť otázku",
   "option": "Možnosť",
   "user": "Používateľ",
@@ -54,8 +53,7 @@
   "poll": "Výsledky ankety",
   "from": "Od",
   "to": "Do",
-  "edit": "Upraviť"
-=======
+  "edit": "Upraviť",
   "changePassword": "Zmeniť heslo"
->>>>>>> 7ff88a6 (Password change)
+
 }
