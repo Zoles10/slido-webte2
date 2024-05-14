@@ -10,6 +10,7 @@ import NavigateMyQuestions from "@/components/ui/navigateMyQuestions";
 import LanguageSwitcher from "@/components/ui/languageSwitcher";
 import { FormattedMessage } from "react-intl";
 import NavigateToUsers from "@/components/ui/navigateToUsers";
+import NavgateToChangePassword from "@/components/ui/navigateToChangePassword";
 import { Loader2 } from "lucide-react";
 
 export default function Home() {
@@ -23,7 +24,8 @@ export default function Home() {
           <ModeToggle />
           <NavigateButton />
           <NavigateMyQuestions />
-          {isAdmin && <NavigateToUsers />}
+          <NavgateToChangePassword/>
+          {isAdmin && (<NavigateToUsers/>)} 
           <LogoutButton />
         </div>
       </header>

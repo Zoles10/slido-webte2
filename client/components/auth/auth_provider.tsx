@@ -21,6 +21,7 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
 };
@@ -134,10 +135,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   //     console.log("User logged in:", user); // Now this will log the updated user
   //   }
   // }, [isAuthenticated, user, router]);
+  
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    const username = user?.email;
+    if (!username) {
+      throw new Error("User not authenticated");
+    }
+    const response = await fetch(apiUrl + "password", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ username, new_password: newPassword }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to change password");
+    }
+    return data;
+  };
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, isAuthenticated, isAdmin }}
+      value={{ user, login, logout,changePassword, isAuthenticated, isAdmin }}
     >
       {children}
     </AuthContext.Provider>

@@ -52,5 +52,6 @@
   "poll": "Poll results",
   "From": "From",
   "To": "To",
-  "filterTopic": "Filter by topic..."
+  "filterTopic": "Filter by topic...",
+  "changePassword": "Change password"
 }
